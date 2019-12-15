@@ -1,0 +1,37 @@
+#ifndef MESH_H
+#define MESH_H
+
+#include <glad/glad.h>
+
+#include "Shader.h"
+
+class Mesh
+{
+public:
+	Mesh();
+	~Mesh();
+
+	void render(bool wireframe = false);
+
+private:
+	GLfloat vertices[12] =
+	{
+		-0.5f,  0.5f, 0.0f,
+		-0.5f, -0.5f, 0.0f,
+		 0.5f, -0.5f, 0.0f,
+		 0.5f,  0.5f, 0.0f,
+	};
+
+	GLuint indices[6] =
+	{
+		0, 1, 2,
+		0, 2, 3
+	};
+
+	GLuint VAO;
+	GLuint VBO;
+	GLuint EBO;
+	Shader* program;
+};
+
+#endif
