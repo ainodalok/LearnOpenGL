@@ -16,11 +16,12 @@ public:
 	void render(bool wireframe = false);
 
 private:
-	GLfloat vertices[9] =
+	GLfloat vertices[18] =
 	{
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f,
+		//positions				//colors
+		-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, 0.0f,
+		 0.0f,  0.5f, 0.0f,		0.0f, 0.0f, 1.0f
 	};
 
 	GLuint indices[3] =
