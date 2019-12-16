@@ -2,6 +2,8 @@
 #define MESH_H
 
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/gtc/constants.hpp>
 
 #include "Shader.h"
 
@@ -14,18 +16,16 @@ public:
 	void render(bool wireframe = false);
 
 private:
-	GLfloat vertices[12] =
+	GLfloat vertices[9] =
 	{
-		-0.5f,  0.5f, 0.0f,
 		-0.5f, -0.5f, 0.0f,
 		 0.5f, -0.5f, 0.0f,
-		 0.5f,  0.5f, 0.0f,
+		 0.0f,  0.5f, 0.0f,
 	};
 
-	GLuint indices[6] =
+	GLuint indices[3] =
 	{
-		0, 1, 2,
-		0, 2, 3
+		0, 1, 2
 	};
 
 	GLuint VAO;
