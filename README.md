@@ -7,3 +7,4 @@ Deps:
 - GLAD OpenGL Core 4.6
 - Dear ImGui
 - glm
+- stb
