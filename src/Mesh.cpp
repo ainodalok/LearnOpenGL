@@ -24,6 +24,8 @@ Mesh::Mesh()
 	loadTexture("Textures/awesomeface.png", GL_RGB, GL_RGBA);
 	
 	program = new Shader("Shaders/triangle.vert", "null", "Shaders/triangle.frag");
+
+	M = glm::mat4(1.0f);
 }
 
 Mesh::~Mesh()
@@ -68,6 +70,25 @@ void Mesh::render(bool wireframe)
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glBindVertexArray(VAO);
+
+	
+
+	M = glm::mat4(1.0f);
+	M = glm::translate(M, glm::vec3(0.5f, -0.5f, 0.0f));
+	M = glm::rotate(M, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+	M = glm::scale(M, glm::vec3(0.5f, 0.5f, 0.5f));
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	M = glm::mat4(1.0f);
+	M = glm::translate(M, glm::vec3(-0.5f, 0.5f, 0.0f));
+	M = glm::rotate(M, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+	float scale = (sin((float)glfwGetTime() * 2.0f) + 1.0f) / 2.0f;
+	scale = scale * 0.8f + 0.2f;
+	M = glm::scale(M, glm::vec3(scale, scale, scale));
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
+
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	if (wireframe)

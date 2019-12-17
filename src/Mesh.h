@@ -5,6 +5,9 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/constants.hpp>
 #include <stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
 #include "Shader.h"
@@ -38,6 +41,7 @@ private:
 	GLuint EBO;
 	std::vector<GLuint> textures;
 	Shader* program;
+	glm::mat4 M;
 
 	void loadTexture(const std::string &texturePath, GLint internalFormat, GLenum format);
 };

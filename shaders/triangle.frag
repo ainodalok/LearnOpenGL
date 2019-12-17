@@ -10,5 +10,5 @@ layout (binding = 1) uniform sampler2D triangleTex1;
 
 void main()
 {
-    fragColor = mix(texture(triangleTex0, vertexTexCoord), texture(triangleTex1, vertexTexCoord), 0.2);
+    fragColor = mix(texture(triangleTex0, vertexTexCoord), texture(triangleTex1, vertexTexCoord), 0.2) * vertexColor;
 }
