@@ -1,8 +1,56 @@
 #include "Application.h"
 
+#define DEBUG 0
+
 void Application::glfwErrorCallback(int error, const char* description)
 {
 	std::cerr << "Glfw Error " << error << ": " << description << std::endl;
+}
+
+void Application::glfwFramebufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	app->camera->updateP(width, height);
+	app->draw();
+}
+
+void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
+{
+	auto const src_str = [source]() {
+		switch (source)
+		{
+		case GL_DEBUG_SOURCE_API: return "API";
+		case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
+		case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
+		case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD PARTY";
+		case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
+		case GL_DEBUG_SOURCE_OTHER: return "OTHER";
+		}
+	}();
+
+	auto const type_str = [type]() {
+		switch (type)
+		{
+		case GL_DEBUG_TYPE_ERROR: return "ERROR";
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+		case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+		case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+		case GL_DEBUG_TYPE_MARKER: return "MARKER";
+		case GL_DEBUG_TYPE_OTHER: return "OTHER";
+		}
+	}();
+
+	auto const severity_str = [severity]() {
+		switch (severity) {
+		case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
+		case GL_DEBUG_SEVERITY_LOW: return "LOW";
+		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+		}
+	}();
+
+	std::cout << src_str << ", " << type_str << ", " << severity_str << ", " << id << ": " << message << std::endl;
 }
 
 Application::Application()
@@ -26,19 +74,28 @@ Application::Application()
 	glfwMakeContextCurrent(window);
 	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		std::cerr << "Failed to load GL functions" << std::endl;
+	glfwSetWindowUserPointer(window, this);
 	glfwSetErrorCallback(glfwErrorCallback);
-
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glfwSetFramebufferSizeCallback(window, glfwFramebufferSizeCallback);
+#if DEBUG == 1
+	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	glDebugMessageCallback(glMessageCallback, nullptr);
+#endif
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
 
 	ui = new UI(window);
-	quadrangle = new Mesh();
+	camera = new Camera(window);
+	mesh = new Mesh();
 }
 
 Application::~Application()
 {
 	delete ui;
-	delete quadrangle;
+	delete camera;
+	delete mesh;
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
@@ -50,11 +107,11 @@ void Application::executeLoop()
 		glfwPollEvents();
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();		
-
+		ImGui::NewFrame();
 
 
 		ImGui::Render();
+		
 		draw();
 	}
 }
@@ -66,8 +123,9 @@ void Application::draw()
 	glViewport(0, 0, width, height);
 	glClearColor(0.5f, 0.0f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
 
-	quadrangle->render();
+	mesh->render(*camera, false);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);

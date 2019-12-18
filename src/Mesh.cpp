@@ -9,20 +9,18 @@ Mesh::Mesh()
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
 
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	//glGenBuffers(1, &EBO);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	loadTexture("Textures/container.jpg", GL_RGB, GL_RGB);
 	loadTexture("Textures/awesomeface.png", GL_RGB, GL_RGBA);
-	
+
 	program = new Shader("Shaders/triangle.vert", "null", "Shaders/triangle.frag");
 
 	M = glm::mat4(1.0f);
@@ -33,7 +31,7 @@ Mesh::~Mesh()
 	delete program;
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
+	//glDeleteBuffers(1, &EBO);
 }
 
 void Mesh::loadTexture(const std::string &texturePath, GLint internalFormat, GLenum format)
@@ -58,7 +56,7 @@ void Mesh::loadTexture(const std::string &texturePath, GLint internalFormat, GLe
 	textures.push_back(texture);
 }
 
-void Mesh::render(bool wireframe)
+void Mesh::render(const Camera& camera, bool wireframe)
 {
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -71,25 +69,21 @@ void Mesh::render(bool wireframe)
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glBindVertexArray(VAO);
 
+	glUniformMatrix4fv(1, 1, GL_FALSE, camera.getV());
+	glUniformMatrix4fv(2, 1, GL_FALSE, camera.getP());
+
+	for (unsigned int i = 0; i < 10; i++)
+	{
+		M = glm::mat4(1.0f);
+		M = glm::translate(M, cubePositions[i]);
+		M = glm::rotate(M, (float)glfwGetTime() * glm::radians(50.0f + 20 * i), glm::vec3(0.5f, 1.0f, 0.0f));
+		M = glm::scale(M, glm::vec3(1.0f, 1.0f, 1.0f));
+		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	
-
-	M = glm::mat4(1.0f);
-	M = glm::translate(M, glm::vec3(0.5f, -0.5f, 0.0f));
-	M = glm::rotate(M, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-	M = glm::scale(M, glm::vec3(0.5f, 0.5f, 0.5f));
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	M = glm::mat4(1.0f);
-	M = glm::translate(M, glm::vec3(-0.5f, 0.5f, 0.0f));
-	M = glm::rotate(M, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-	float scale = (sin((float)glfwGetTime() * 2.0f) + 1.0f) / 2.0f;
-	scale = scale * 0.8f + 0.2f;
-	M = glm::scale(M, glm::vec3(scale, scale, scale));
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

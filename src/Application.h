@@ -8,6 +8,7 @@
 
 #include "UI.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 class Application
 {
@@ -20,11 +21,14 @@ public:
 private:
 	GLFWwindow* window;
 	UI* ui;
-	Mesh* quadrangle;
+	Mesh* mesh;
+	Camera* camera;
 
 	void draw();
 
 	static void glfwErrorCallback(int error, const char* description);
+	static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param);
+	static void glfwFramebufferSizeCallback(GLFWwindow* window, int width, int height);
 };
 
 #endif
