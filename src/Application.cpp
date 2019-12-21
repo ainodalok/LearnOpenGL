@@ -42,8 +42,12 @@ void Application::glfwMouseCallback(GLFWwindow* window, double xpos, double ypos
 			float yOffset = (app->previousMouseY - ypos) * app->sensitivity;
 			app->previousMouseX = xpos;
 			app->previousMouseY = ypos;
-			app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(yOffset), glm::vec3(1.0f, 0.0f, 0.0f));
+			if (glm::pitch(app->camera->orientation) + glm::radians(yOffset) > glm::radians(90.0f))
+				yOffset = glm::radians(90.0f) - glm::pitch(app->camera->orientation);
+			if (glm::pitch(app->camera->orientation) + glm::radians(yOffset) < glm::radians(-90.0f))
+				yOffset = glm::radians(-90.0f) - glm::pitch(app->camera->orientation);
 			app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(-xOffset), glm::vec3(0.0f, 1.0f, 0.0f));
+			//app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(yOffset), glm::vec3(1.0f, 0.0f, 0.0f));
 		}
 	}
 	
@@ -174,6 +178,11 @@ void Application::executeLoop()
 		input->frameFinished();
 
 		ImGuiPerformanceBox(previousTime);
+		ImGui::SetNextWindowBgAlpha(0.35f);
+		ImGui::Begin("Camera pitch/yaw", (bool*)0, overlayBox);
+			ImGui::Text("Pitch %f", glm::pitch(camera->orientation));
+			ImGui::Text("Yaw   %f", glm::yaw(camera->orientation));
+		ImGui::End();
 
 		ImGui::Render();
 
@@ -237,8 +246,8 @@ void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_p
 	double timePassed = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(currentTime - previousTime).count();
 	ImGui::SetNextWindowBgAlpha(0.35f);
 	ImGui::Begin("FPS overlay", (bool*)0, overlayBox);
-	ImGui::Text("%f ms/Frame", timePassed);
-	ImGui::Text("%d FPS", static_cast<unsigned>(1000.0 / timePassed));
+		ImGui::Text("%f ms/Frame", timePassed);
+		ImGui::Text("%d FPS", static_cast<unsigned>(1000.0 / timePassed));
 	ImGui::End();
 	previousTime = currentTime;
 }
