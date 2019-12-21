@@ -20,7 +20,9 @@ void Camera::updateP(int width, int height)
 
 void Camera::updateV()
 {
-	V = glm::lookAt(pos, pos + front, up);
+	V = glm::translate(glm::mat4(1), pos);
+	V = V * glm::mat4_cast(orientation);
+	V = glm::inverse(V);
 }
 
 const glm::f32* Camera::getV() const

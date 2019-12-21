@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <stdlib.h> 
 #include <iostream>
 #include <chrono>
@@ -35,6 +36,8 @@ private:
 	Camera* camera;
 	Input* input;
 
+	bool focus = false;
+
 	void draw();
 	void handleInput();
 	void ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point& previousTime);
@@ -43,6 +46,8 @@ private:
 	static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param);
 	static void glfwFramebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void glfwMouseCallback(GLFWwindow* window, double xpos, double ypos);
+	static void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 };
 
 #endif

@@ -25,6 +25,27 @@ void Application::glfwKeyCallback(GLFWwindow* window, int key, int scancode, int
 			app->input->keyEvents.push({ key, action, std::chrono::high_resolution_clock::now() });
 }
 
+void Application::glfwMouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+
+}
+
+void Application::glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	if (button == GLFW_MOUSE_BUTTON_RIGHT)
+		if (action == GLFW_PRESS)
+		{
+			app->focus = true;
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		else if (action == GLFW_RELEASE)
+		{
+			app->focus = false;
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+}
+
 void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {
 	auto const src_str = [source]() {
@@ -89,6 +110,8 @@ Application::Application()
 	glfwSetErrorCallback(glfwErrorCallback);
 	glfwSetFramebufferSizeCallback(window, glfwFramebufferSizeCallback);
 	glfwSetKeyCallback(window, glfwKeyCallback);
+	glfwSetCursorPosCallback(window, glfwMouseCallback);
+	glfwSetMouseButtonCallback(window, glfwMouseButtonCallback);
 #if DEBUG == 1
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -166,11 +189,13 @@ void Application::handleInput()
 	ImGui::End();
 
 	//Diagonal and axis movement should be calculated separately using normalized direction vectors
+	glm::vec3 front = glm::rotate(camera->orientation, camera->initialFront);
+
 	//Has negative signs in case direction is opposite
 	double forwardDuration = input->getKeyDuration(GLFW_KEY_W) - input->getKeyDuration(GLFW_KEY_S);
-	glm::vec3 forwardDirection = static_cast<float>(glm::sign(forwardDuration)) * camera->front;
+	glm::vec3 forwardDirection = static_cast<float>(glm::sign(forwardDuration)) * front;
 	double rightDuration = input->getKeyDuration(GLFW_KEY_D) - input->getKeyDuration(GLFW_KEY_A);
-	glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration)) * glm::normalize(glm::cross(camera->front, camera->up));
+	glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration)) * glm::normalize(glm::cross(front, camera->initialUp));
 
 	double diagonalDuration = glm::min(glm::abs(forwardDuration), glm::abs(rightDuration));
 	glm::vec3 diagonalDirection = forwardDirection + rightDirection;
