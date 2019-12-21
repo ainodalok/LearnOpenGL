@@ -27,7 +27,26 @@ void Application::glfwKeyCallback(GLFWwindow* window, int key, int scancode, int
 
 void Application::glfwMouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
-
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	if (app->focus)
+	{
+		if (app->firstCallbackInFocus)
+		{
+			app->previousMouseX = xpos;
+			app->previousMouseY = ypos;
+			app->firstCallbackInFocus = false;
+		}
+		else
+		{
+			float xOffset = (xpos - app->previousMouseX) * app->sensitivity;
+			float yOffset = (app->previousMouseY - ypos) * app->sensitivity;
+			app->previousMouseX = xpos;
+			app->previousMouseY = ypos;
+			app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(yOffset), glm::vec3(1.0f, 0.0f, 0.0f));
+			app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(-xOffset), glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+	}
+	
 }
 
 void Application::glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -38,6 +57,7 @@ void Application::glfwMouseButtonCallback(GLFWwindow* window, int button, int ac
 		{
 			app->focus = true;
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			app->firstCallbackInFocus = true;
 		}
 		else if (action == GLFW_RELEASE)
 		{
@@ -190,12 +210,13 @@ void Application::handleInput()
 
 	//Diagonal and axis movement should be calculated separately using normalized direction vectors
 	glm::vec3 front = glm::rotate(camera->orientation, camera->initialFront);
+	glm::vec3 up = glm::rotate(camera->orientation, camera->initialUp);
 
 	//Has negative signs in case direction is opposite
 	double forwardDuration = input->getKeyDuration(GLFW_KEY_W) - input->getKeyDuration(GLFW_KEY_S);
 	glm::vec3 forwardDirection = static_cast<float>(glm::sign(forwardDuration)) * front;
 	double rightDuration = input->getKeyDuration(GLFW_KEY_D) - input->getKeyDuration(GLFW_KEY_A);
-	glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration)) * glm::normalize(glm::cross(front, camera->initialUp));
+	glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration)) * glm::normalize(glm::cross(front, up));
 
 	double diagonalDuration = glm::min(glm::abs(forwardDuration), glm::abs(rightDuration));
 	glm::vec3 diagonalDirection = forwardDirection + rightDirection;

@@ -37,6 +37,10 @@ private:
 	Input* input;
 
 	bool focus = false;
+	float previousMouseX;
+	float previousMouseY;
+	float sensitivity = 0.05f;
+	bool firstCallbackInFocus = true;
 
 	void draw();
 	void handleInput();
