@@ -10,8 +10,19 @@ void Application::glfwErrorCallback(int error, const char* description)
 void Application::glfwFramebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-	app->camera->updateP(width, height);
-	app->draw();
+	if (width > 0 && height > 0)
+	{
+		app->camera->updateP(width, height);
+		app->draw();
+	}
+}
+
+void Application::glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	if (action != GLFW_REPEAT)
+		if (app->input->keyData.find(key) != app->input->keyData.end())
+			app->input->keyEvents.push({ key, action, std::chrono::high_resolution_clock::now() });
 }
 
 void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
@@ -77,6 +88,7 @@ Application::Application()
 	glfwSetWindowUserPointer(window, this);
 	glfwSetErrorCallback(glfwErrorCallback);
 	glfwSetFramebufferSizeCallback(window, glfwFramebufferSizeCallback);
+	glfwSetKeyCallback(window, glfwKeyCallback);
 #if DEBUG == 1
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -86,6 +98,7 @@ Application::Application()
 	//glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
+	input = new Input();
 	ui = new UI(window);
 	camera = new Camera(window);
 	mesh = new Mesh();
@@ -93,6 +106,7 @@ Application::Application()
 
 Application::~Application()
 {
+	delete input;
 	delete ui;
 	delete camera;
 	delete mesh;
@@ -102,16 +116,24 @@ Application::~Application()
 
 void Application::executeLoop()
 {
+	std::chrono::high_resolution_clock::time_point previousTime = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		input->resolveKeyEvents();
+
+		handleInput();
+		input->frameFinished();
+
+		ImGuiPerformanceBox(previousTime);
 
 		ImGui::Render();
-		
+
 		draw();
 	}
 }
@@ -124,9 +146,34 @@ void Application::draw()
 	glClearColor(0.5f, 0.0f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-
+	camera->updateV();
 	mesh->render(*camera, false);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
+}
+
+void Application::handleInput()
+{
+	if (input->getKeySinglePressed(GLFW_KEY_ESCAPE))
+		glfwSetWindowShouldClose(window, true);
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGui::Begin("Movement durations/Frame", (bool*) 0, overlayBox);
+		ImGui::Text("W %f ms", input->getKeyDuration(GLFW_KEY_W));
+		ImGui::Text("S %f ms", input->getKeyDuration(GLFW_KEY_S));
+		ImGui::Text("A %f ms", input->getKeyDuration(GLFW_KEY_A));
+		ImGui::Text("D %f ms", input->getKeyDuration(GLFW_KEY_D));
+	ImGui::End();
+}
+
+void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point &previousTime)
+{
+	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+	double timePassed = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(currentTime - previousTime).count();
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGui::Begin("FPS overlay", (bool*)0, overlayBox);
+	ImGui::Text("%f ms/Frame", timePassed);
+	ImGui::Text("%d FPS", static_cast<unsigned>(1000.0 / timePassed));
+	ImGui::End();
+	previousTime = currentTime;
 }
