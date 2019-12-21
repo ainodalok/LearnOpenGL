@@ -164,6 +164,25 @@ void Application::handleInput()
 		ImGui::Text("A %f ms", input->getKeyDuration(GLFW_KEY_A));
 		ImGui::Text("D %f ms", input->getKeyDuration(GLFW_KEY_D));
 	ImGui::End();
+
+	//Diagonal and axis movement should be calculated separately using normalized direction vectors
+	//Has negative signs in case direction is opposite
+	double forwardDuration = input->getKeyDuration(GLFW_KEY_W) - input->getKeyDuration(GLFW_KEY_S);
+	glm::vec3 forwardDirection = static_cast<float>(glm::sign(forwardDuration)) * camera->front;
+	double rightDuration = input->getKeyDuration(GLFW_KEY_D) - input->getKeyDuration(GLFW_KEY_A);
+	glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration)) * glm::normalize(glm::cross(camera->front, camera->up));
+
+	double diagonalDuration = glm::min(glm::abs(forwardDuration), glm::abs(rightDuration));
+	glm::vec3 diagonalDirection = forwardDirection + rightDirection;
+	if (glm::length(diagonalDirection) > 0.0f)
+		diagonalDirection = glm::normalize(diagonalDirection);
+	glm::vec3 diagonalMovement = static_cast<float>(diagonalDuration) * diagonalDirection;
+
+	double axisDuration = glm::max(glm::abs(forwardDuration), glm::abs(rightDuration)) - diagonalDuration;
+	glm::vec3 axisDirection = glm::abs(forwardDuration) > glm::abs(rightDuration) ? forwardDirection : rightDirection;
+	glm::vec3 axisMovement = static_cast<float>(axisDuration)* axisDirection;
+
+	camera->pos += (diagonalMovement + axisMovement) * camera->speed;
 }
 
 void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point &previousTime)
