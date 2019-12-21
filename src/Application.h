@@ -39,7 +39,7 @@ private:
 	bool focus = false;
 	float previousMouseX;
 	float previousMouseY;
-	float sensitivity = 0.05f;
+	float sensitivity = 0.1f;
 	bool firstCallbackInFocus = true;
 
 	void draw();

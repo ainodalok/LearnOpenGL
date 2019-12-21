@@ -6,16 +6,13 @@ Camera::Camera(GLFWwindow* window)
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
-	float aspect = (float)width / (float)height;
-	//P = glm::perspective(glm::atan(glm::tan(glm::radians(90.0f) / 2.0f) * aspect) * 2.0f, aspect, 0.1f, 100.0f);
-	P = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+	updateP(width, height);
 }
 
 void Camera::updateP(int width, int height)
 {
 	float aspect = (float)width / (float)height;
-	//P = glm::perspective(glm::atan(glm::tan(glm::radians(90.0f) / 2.0f) * aspect) * 2.0f, aspect, 0.1f, 100.0f);
-	P = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+	P = glm::perspective(glm::atan(glm::tan(glm::radians(90.0f) / 2.0f) / aspect) * 2.0f, aspect, 0.1f, 100.0f);
 }
 
 void Camera::updateV()
