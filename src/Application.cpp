@@ -185,16 +185,6 @@ void Application::executeLoop()
 		input->frameFinished();
 
 		ImGuiPerformanceBox(previousTime);
-		ImGui::SetNextWindowBgAlpha(0.35f);
-		ImGui::Begin("Camera pitch/yaw", (bool*)0, overlayBox);
-			ImGui::Text("Pitch %f", camera->getPitch());
-			ImGui::Text("Yaw   %f", camera->getYaw());
-			ImGui::Text("Roll  %f", glm::roll(camera->orientation));
-			ImGui::Text("w %f", camera->orientation.w);
-			ImGui::Text("x %f", camera->orientation.x);
-			ImGui::Text("y %f", camera->orientation.y);
-			ImGui::Text("z %f", camera->orientation.z);
-		ImGui::End();
 
 		ImGui::Render();
 
@@ -221,13 +211,6 @@ void Application::handleInput()
 {
 	if (input->getKeySinglePressed(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(window, true);
-	ImGui::SetNextWindowBgAlpha(0.35f);
-	ImGui::Begin("Movement durations/Frame", (bool*) 0, overlayBox);
-		ImGui::Text("W %f ms", input->getKeyDuration(GLFW_KEY_W));
-		ImGui::Text("S %f ms", input->getKeyDuration(GLFW_KEY_S));
-		ImGui::Text("A %f ms", input->getKeyDuration(GLFW_KEY_A));
-		ImGui::Text("D %f ms", input->getKeyDuration(GLFW_KEY_D));
-	ImGui::End();
 
 	//Diagonal and axis movement should be calculated separately using normalized direction vectors
 	glm::vec3 front = glm::rotate(camera->orientation, camera->initialFront);
