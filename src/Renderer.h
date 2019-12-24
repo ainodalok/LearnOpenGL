@@ -1,5 +1,5 @@
-#ifndef MESH_H
-#define MESH_H
+#ifndef RENDERER_H
+#define RENDERER_H
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,16 +8,17 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
 #include <vector>
 
 #include "Shader.h"
 #include "Camera.h"
 
-class Mesh
+class Renderer
 {
 public:
-	Mesh();
-	~Mesh();
+    Renderer();
+	~Renderer();
 
 	void render(const Camera &camera, bool wireframe);
 
@@ -96,12 +97,14 @@ private:
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };	
 
-	GLuint VAO;
+    std::vector<GLuint> VAOs;
 	GLuint VBO;
 	GLuint EBO;
 	std::vector<GLuint> textures;
-	Shader* program;
+    std::vector<Shader*> programs;
 	glm::mat4 M;
+
+    glm::vec3 lightPosition = glm::vec3(1.2f, 1.0f, 2.0f);
 
 	void loadTexture(const std::string &texturePath, GLint internalFormat, GLenum format);
 };

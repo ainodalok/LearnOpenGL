@@ -12,7 +12,7 @@
 #include <chrono>
 
 #include "UI.h"
-#include "Mesh.h"
+#include "Renderer.h"
 #include "Camera.h"
 #include "Input.h"
 
@@ -32,7 +32,7 @@ private:
 
 	GLFWwindow* window;
 	UI* ui;
-	Mesh* mesh;
+	Renderer* renderer;
 	Camera* camera;
 	Input* input;
 

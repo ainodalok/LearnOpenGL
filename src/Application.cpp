@@ -155,7 +155,7 @@ Application::Application()
 	input = new Input();
 	ui = new UI(window);
 	camera = new Camera(window);
-	mesh = new Mesh();
+	renderer = new Renderer();
 }
 
 Application::~Application()
@@ -163,7 +163,7 @@ Application::~Application()
 	delete input;
 	delete ui;
 	delete camera;
-	delete mesh;
+	delete renderer;
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
@@ -197,11 +197,11 @@ void Application::draw()
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
-	glClearColor(0.5f, 0.0f, 0.5f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	camera->updateV();
-	mesh->render(*camera, false);
+	renderer->render(*camera, false);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
