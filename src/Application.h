@@ -37,8 +37,8 @@ private:
 	Input* input;
 
 	bool focus = false;
-	float previousMouseX;
-	float previousMouseY;
+	float previousMouseX = 0.0f;
+	float previousMouseY = 0.0f;
 	float sensitivity = 0.1f;
 	bool firstCallbackInFocus = true;
 

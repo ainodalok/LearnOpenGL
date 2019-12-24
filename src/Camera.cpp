@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include <iostream>
 
 Camera::Camera(GLFWwindow* window)
 {
@@ -17,7 +18,7 @@ void Camera::updateP(int width, int height)
 
 void Camera::updateV()
 {
-	V = glm::translate(glm::mat4(1), pos);
+	V = glm::translate(pos);
 	V = V * glm::mat4_cast(orientation);
 	V = glm::inverse(V);
 }
@@ -30,4 +31,18 @@ const glm::f32* Camera::getV() const
 const glm::f32* Camera::getP() const
 {
 	return glm::value_ptr(P);;
+}
+
+float Camera::getYaw()
+{
+	//Avoid singularity with w = 0.0
+	glm::quat noPitch = glm::rotate(orientation, -getPitch(), glm::normalize(orientation * initialRight));
+	if (noPitch.w == 0)
+		return glm::pi<float>();
+	return glm::atan(noPitch.y / noPitch.w);
+}
+
+float Camera::getPitch()
+{
+	return glm::half_pi<float>() - glm::acos(glm::dot(initialUp, glm::normalize(orientation * initialFront)));
 }

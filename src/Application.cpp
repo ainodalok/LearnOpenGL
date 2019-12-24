@@ -28,29 +28,33 @@ void Application::glfwKeyCallback(GLFWwindow* window, int key, int scancode, int
 void Application::glfwMouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	float fxpos = static_cast<float>(xpos);
+	float fypos = static_cast<float>(ypos);
+
 	if (app->focus)
 	{
 		if (app->firstCallbackInFocus)
 		{
-			app->previousMouseX = xpos;
-			app->previousMouseY = ypos;
+			app->previousMouseX = fxpos;
+			app->previousMouseY = fypos;
 			app->firstCallbackInFocus = false;
 		}
 		else
 		{
-			float xOffset = (xpos - app->previousMouseX) * app->sensitivity;
-			float yOffset = (app->previousMouseY - ypos) * app->sensitivity;
-			app->previousMouseX = xpos;
-			app->previousMouseY = ypos;
-			if (glm::pitch(app->camera->orientation) + glm::radians(yOffset) > glm::radians(90.0f))
-				yOffset = glm::radians(90.0f) - glm::pitch(app->camera->orientation);
-			if (glm::pitch(app->camera->orientation) + glm::radians(yOffset) < glm::radians(-90.0f))
-				yOffset = glm::radians(-90.0f) - glm::pitch(app->camera->orientation);
-			app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(-xOffset), glm::vec3(0.0f, 1.0f, 0.0f));
-			//app->camera->orientation = glm::rotate(app->camera->orientation, glm::radians(yOffset), glm::vec3(1.0f, 0.0f, 0.0f));
-		}
+			float xOffset = (fxpos - app->previousMouseX) * app->sensitivity;
+			float yOffset = (app->previousMouseY - fypos) * app->sensitivity;
+			app->previousMouseX = fxpos;
+			app->previousMouseY = fypos;
+			if (glm::degrees(app->camera->getPitch()) + yOffset > 89.9f)
+				yOffset = 89.9f - glm::degrees(app->camera->getPitch());
+			else if (glm::degrees(app->camera->getPitch()) + yOffset < -89.9f)
+				yOffset = -89.9f - glm::degrees(app->camera->getPitch());
+
+			glm::quat pitchRotation = glm::angleAxis(glm::radians(yOffset), app->camera->initialRight);
+			glm::quat yawRotation = glm::angleAxis(glm::radians(-xOffset), app->camera->initialUp);
+			app->camera->orientation = yawRotation * app->camera->orientation * pitchRotation;
+		} 
 	}
-	
 }
 
 void Application::glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -81,6 +85,7 @@ void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenu
 		case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD PARTY";
 		case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
 		case GL_DEBUG_SOURCE_OTHER: return "OTHER";
+		default: return "UNKNOWN";
 		}
 	}();
 
@@ -94,6 +99,7 @@ void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenu
 		case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
 		case GL_DEBUG_TYPE_MARKER: return "MARKER";
 		case GL_DEBUG_TYPE_OTHER: return "OTHER";
+		default: return "UNKNOWN";
 		}
 	}();
 
@@ -103,6 +109,7 @@ void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenu
 		case GL_DEBUG_SEVERITY_LOW: return "LOW";
 		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
 		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+		default: return "UNKNOWN";
 		}
 	}();
 
@@ -180,8 +187,13 @@ void Application::executeLoop()
 		ImGuiPerformanceBox(previousTime);
 		ImGui::SetNextWindowBgAlpha(0.35f);
 		ImGui::Begin("Camera pitch/yaw", (bool*)0, overlayBox);
-			ImGui::Text("Pitch %f", glm::pitch(camera->orientation));
-			ImGui::Text("Yaw   %f", glm::yaw(camera->orientation));
+			ImGui::Text("Pitch %f", camera->getPitch());
+			ImGui::Text("Yaw   %f", camera->getYaw());
+			ImGui::Text("Roll  %f", glm::roll(camera->orientation));
+			ImGui::Text("w %f", camera->orientation.w);
+			ImGui::Text("x %f", camera->orientation.x);
+			ImGui::Text("y %f", camera->orientation.y);
+			ImGui::Text("z %f", camera->orientation.z);
 		ImGui::End();
 
 		ImGui::Render();

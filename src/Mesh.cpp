@@ -76,7 +76,7 @@ void Mesh::render(const Camera& camera, bool wireframe)
 	{
 		M = glm::mat4(1.0f);
 		M = glm::translate(M, cubePositions[i]);
-		M = glm::rotate(M, (float)glfwGetTime() * glm::radians(50.0f + 20 * i), glm::vec3(0.5f, 1.0f, 0.0f));
+		//M = glm::rotate(M, (float)glfwGetTime() * glm::radians(50.0f + 20 * i), glm::vec3(0.5f, 1.0f, 0.0f));
 		M = glm::scale(M, glm::vec3(1.0f, 1.0f, 1.0f));
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
 
