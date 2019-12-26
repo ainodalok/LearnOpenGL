@@ -10,6 +10,12 @@ struct Light {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+	float constant;
+    float linear;
+    float quadratic;
+	vec4 directionView;
+	float innerCutoff;
+	float outerCutoff;
 };
 
 layout (location = 0) in vec4 fragNormalView;
@@ -27,24 +33,38 @@ void main()
 	vec3 ambient = textureSample * light.ambient;
 
 	
-	vec4 lightDirection;
-	vec4 normal = normalize(fragNormalView);
-	if (light.lightVectorView.w == 0.0f)	//Directional light
-		lightDirection = normalize(-light.lightVectorView);
-	else	//Positional light
+	vec4 lightDirection = normalize(-light.lightVectorView);
+	float intensity = 1.0f;
+	float quadraticAttenuation = 1.0f;
+	if (light.lightVectorView.w != 0.0f)	//if not Directional light => Positional light
 	{
+		vec4 lightDirectionSpot = lightDirection;
 		vec4 vecToLight = light.lightVectorView - fragPositionView;
-		lightDirection = normalize(light.lightVectorView);
-
-		//float distanceToLight = length(vecToLight);
-		//float quadraticAttenuation = 1.0f / max(0.2f * distanceToLight * (distanceToLight + 1), 1.0f);
+		lightDirection = normalize(vecToLight);
+	
+		//If spotlight
+		if (light.directionView.w != 1.0f)
+		{
+			float theta = dot(lightDirection, -light.directionView);
+			float epsilon = light.innerCutoff - light.outerCutoff;
+			intensity = clamp((theta - light.outerCutoff) / epsilon , 0.0f, 1.0f);
+		}
+		float distanceToLight = length(vecToLight);
+		quadraticAttenuation = 1.0f / (light.constant + light.linear * distanceToLight + light.quadratic * distanceToLight * distanceToLight);
 	}
-	vec3 diffuse = max(dot(normal, lightDirection), 0.0f) * textureSample * light.diffuse;
+	vec3 diffuse = vec3(0.0f, 0.0f, 0.0f);
+	vec3 specular = vec3(0.0f, 0.0f, 0.0f);
+	
+	if (intensity > 0.0f)
+	{
+		vec4 normal = normalize(fragNormalView);
+		diffuse = max(dot(normal, lightDirection), 0.0f) * textureSample * light.diffuse;
 
-	vec4 viewDirection = normalize(-fragPositionView);
-	vec4 reflectDirection = reflect(-lightDirection, fragNormalView);
-	vec3 specular = pow(max(dot(viewDirection, reflectDirection), 0), material.shininess) * vec3(texture(material.specular, fragTextureUV)) * light.specular;
+		vec4 viewDirection = normalize(-fragPositionView);
+		vec4 reflectDirection = reflect(-lightDirection, normal);
+		specular = pow(max(dot(viewDirection, reflectDirection), 0), material.shininess) * vec3(texture(material.specular, fragTextureUV)) * light.specular;
+	}
 
-	vec3 result = specular + diffuse + ambient;// * quadraticAttenuation;
+	vec3 result = ((specular + diffuse) * intensity + ambient) * quadraticAttenuation;
 	fragColor = vec4(result, 1.0f);
 }

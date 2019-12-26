@@ -88,7 +88,7 @@ private:
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
 
-	glm::vec3 lightPosition = glm::vec3(1.2f, 1.0f, 2.0f);
+	glm::vec3 lightPosition = glm::vec3(0.0f, -2.0f, -3.0f);
 
 	void loadTexture(const std::string &texturePath, GLint internalFormat, GLenum format);
 };
