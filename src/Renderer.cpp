@@ -11,10 +11,12 @@ Renderer::Renderer()
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0 * sizeof(float)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float))); //Positions
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); //Normals
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //Texture coords
+	glEnableVertexAttribArray(2);
 
 	//Light VAO
 	VAOs.push_back(0);
@@ -23,15 +25,13 @@ Renderer::Renderer()
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0 * sizeof(float)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
 
-	//glGenBuffers(1, &EBO);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//loadTexture("Textures/container.jpg", GL_RGB, GL_RGB);
-	//loadTexture("Textures/awesomeface.png", GL_RGB, GL_RGBA);
+	glActiveTexture(GL_TEXTURE0);
+	loadTexture("textures/container2.png", GL_RGB, GL_RGBA);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	loadTexture("textures/container2_specular.png", GL_RGB, GL_RGBA);
 
 	//Object program
 	programs.push_back(0);
@@ -48,7 +48,6 @@ Renderer::~Renderer()
 	for (int i = 0; i < VAOs.size(); i++)
 		glDeleteVertexArrays(1, &VAOs[i]);
 	glDeleteBuffers(1, &VBO);
-	//glDeleteBuffers(1, &EBO);
 }
 
 void Renderer::loadTexture(const std::string &texturePath, GLint internalFormat, GLenum format)
@@ -78,11 +77,6 @@ void Renderer::render(const Camera& camera, bool wireframe)
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, textures[0]);
-	//glActiveTexture(GL_TEXTURE0 + 1);
-	//glBindTexture(GL_TEXTURE_2D, textures[1]);
-
 	glm::mat4 objectM = glm::mat4(1.0f);
 	glm::mat4 lightM = glm::rotate( static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 1.0f, 0.0f));
 	lightM = glm::translate(lightM, lightPosition);
@@ -92,30 +86,24 @@ void Renderer::render(const Camera& camera, bool wireframe)
 	programs[0]->use();
 	glBindVertexArray(VAOs[0]);
 	glm::mat4 VM = camera.getV() * objectM;
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * VM));
-	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(VM));
-	glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(VM)))));
-	glUniform3f(3, 1.0f, 0.5f, 0.31f);
-	glUniform3f(4, 1.0f, 0.5f, 0.31f);
-	glUniform3f(5, 0.5f, 0.5f, 0.5f);
-	glUniform1f(6, 32.0f);
-	glUniform3fv(7, 1, glm::value_ptr(glm::vec3(camera.getV() * lightM * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))));
-	glUniform3f(8, 0.2f, 0.2f, 0.2f);
-	glUniform3f(9, 0.5f, 0.5f, 0.5f);
-	glUniform3f(10, 1.0f, 1.0f, 1.0f);
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * VM));	//PVM
+	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(VM));	//VM
+	glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(VM)))));	//transposedInvertedVM
+	glUniform1i(3, 0);	//Diffuse texture
+	glUniform1i(4, 1);	//Specular texture
+	glUniform1f(5, 32.0f);	//Specular object shininess
+	glUniform3fv(6, 1, glm::value_ptr(glm::vec3(camera.getV() * lightM * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))));	//Light viewspace position
+	glUniform3f(7, 0.2f, 0.2f, 0.2f);	//Ambient light color
+	glUniform3f(8, 0.5f, 0.5f, 0.5f);	//Diffuse light color
+	glUniform3f(9, 1.0f, 1.0f, 1.0f);	//Specualr light color
 	
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//Light
 	programs[1]->use();
 	glBindVertexArray(VAOs[1]);
-	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.getV()));
-	glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(camera.getP()));
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightM));
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	
 
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -17,9 +17,8 @@ void Camera::updateP(int width, int height)
 
 void Camera::updateV()
 {
-	V = glm::translate(pos);
-	V = V * glm::mat4_cast(orientation);
-	V = glm::inverse(V);
+	V = glm::mat4_cast(glm::inverse(orientation));
+	V = glm::translate(V, -pos);
 }
 
 const glm::mat4& Camera::getV() const
