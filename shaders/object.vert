@@ -7,15 +7,15 @@ layout (location = 0) uniform mat4 PVM;
 layout (location = 1) uniform mat4 VM;
 layout (location = 2) uniform mat3 transposedInvertedVM;
 
-layout (location = 0) out vec3 fragNormalView;
-layout (location = 1) out vec3 fragPositionView;
+layout (location = 0) out vec4 fragNormalView;
+layout (location = 1) out vec4 fragPositionView;
 layout (location = 2) out vec2 fragTextureUV;
 
 void main()
 {
 	gl_Position = PVM * vec4(position, 1.0f);
 	//Multiplied by normal matrix, corrected angles even for non-uniform scaling
-	fragNormalView = transposedInvertedVM * normal;
-	fragPositionView = vec3(VM * vec4(position, 1.0f));
+	fragNormalView = vec4(transposedInvertedVM * normal, 0.0);
+	fragPositionView = VM * vec4(position, 1.0f);
 	fragTextureUV = textureUV;
 }
