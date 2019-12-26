@@ -21,8 +21,8 @@ public:
 	void updateP(int width, int height);
 	void updateV();
 
-	const glm::f32* getV() const;
-	const glm::f32* getP() const;
+	const glm::mat4& getV() const;
+	const glm::mat4& getP() const;
 
 	float getYaw();
 	float getPitch();

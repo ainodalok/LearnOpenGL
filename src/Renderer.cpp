@@ -11,8 +11,10 @@ Renderer::Renderer()
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	//Light VAO
 	VAOs.push_back(0);
@@ -21,7 +23,7 @@ Renderer::Renderer()
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
 
 	//glGenBuffers(1, &EBO);
@@ -37,8 +39,6 @@ Renderer::Renderer()
 	//Light program
 	programs.push_back(0);
 	programs[1] = new Shader("shaders/lamp.vert", "null", "shaders/lamp.frag");
-
-	M = glm::mat4(1.0f);
 }
 
 Renderer::~Renderer()
@@ -83,25 +83,35 @@ void Renderer::render(const Camera& camera, bool wireframe)
 	//glActiveTexture(GL_TEXTURE0 + 1);
 	//glBindTexture(GL_TEXTURE_2D, textures[1]);
 
+	glm::mat4 objectM = glm::mat4(1.0f);
+	glm::mat4 lightM = glm::rotate( static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 1.0f, 0.0f));
+	lightM = glm::translate(lightM, lightPosition);
+	lightM = glm::scale(lightM, glm::vec3(0.2f));
+
 	//Object
 	programs[0]->use();
 	glBindVertexArray(VAOs[0]);
-	glUniformMatrix4fv(1, 1, GL_FALSE, camera.getV());
-	glUniformMatrix4fv(2, 1, GL_FALSE, camera.getP());
-	M = glm::mat4(1.0f);
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
-	glUniform3f(3, 1.0f, 0.5f, 0.31f); //object color
-	glUniform3f(4, 1.0f, 1.0f, 1.0f); //light color
+	glm::mat4 VM = camera.getV() * objectM;
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * VM));
+	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(VM));
+	glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(VM)))));
+	glUniform3f(3, 1.0f, 0.5f, 0.31f);
+	glUniform3f(4, 1.0f, 0.5f, 0.31f);
+	glUniform3f(5, 0.5f, 0.5f, 0.5f);
+	glUniform1f(6, 32.0f);
+	glUniform3fv(7, 1, glm::value_ptr(glm::vec3(camera.getV() * lightM * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))));
+	glUniform3f(8, 0.2f, 0.2f, 0.2f);
+	glUniform3f(9, 0.5f, 0.5f, 0.5f);
+	glUniform3f(10, 1.0f, 1.0f, 1.0f);
+	
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//Light
 	programs[1]->use();
 	glBindVertexArray(VAOs[1]);
-	glUniformMatrix4fv(1, 1, GL_FALSE, camera.getV());
-	glUniformMatrix4fv(2, 1, GL_FALSE, camera.getP());
-	M = glm::translate(lightPosition);
-	M = glm::scale(M, glm::vec3(0.2f));
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(M));
+	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.getV()));
+	glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(camera.getP()));
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightM));
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	
 	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
