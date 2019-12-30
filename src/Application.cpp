@@ -53,6 +53,7 @@ void Application::glfwMouseCallback(GLFWwindow* window, double xpos, double ypos
 			glm::quat pitchRotation = glm::angleAxis(glm::radians(yOffset), app->camera->initialRight);
 			glm::quat yawRotation = glm::angleAxis(glm::radians(-xOffset), app->camera->initialUp);
 			app->camera->orientation = yawRotation * app->camera->orientation * pitchRotation;
+			app->camera->needUpdateV = true;
 		} 
 	}
 }
@@ -114,6 +115,7 @@ void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenu
 	}();
 
 	std::cout << src_str << ", " << type_str << ", " << severity_str << ", " << id << ": " << message << std::endl;
+	std::cin.get();
 }
 
 Application::Application()
@@ -200,7 +202,7 @@ void Application::draw()
 	//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 	camera->updateV();
 	renderer->render(*camera, false);
 
@@ -213,27 +215,34 @@ void Application::handleInput()
 	if (input->getKeySinglePressed(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(window, true);
 
-	//Diagonal and axis movement should be calculated separately using normalized direction vectors
-	glm::vec3 front = glm::rotate(camera->orientation, camera->initialFront);
-	glm::vec3 up = glm::rotate(camera->orientation, camera->initialUp);
+	
 
 	//Has negative signs in case direction is opposite
 	double forwardDuration = input->getKeyDuration(GLFW_KEY_W) - input->getKeyDuration(GLFW_KEY_S);
-	glm::vec3 forwardDirection = static_cast<float>(glm::sign(forwardDuration)) * front;
 	double rightDuration = input->getKeyDuration(GLFW_KEY_D) - input->getKeyDuration(GLFW_KEY_A);
-	glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration)) * glm::normalize(glm::cross(front, up));
+	
+	if (forwardDuration != 0.0 || rightDuration != 0.0)
+	{
+		//Diagonal and axis movement should be calculated separately using normalized direction vectors
+		glm::vec3 front = glm::rotate(camera->orientation, camera->initialFront);
+		glm::vec3 up = glm::rotate(camera->orientation, camera->initialUp);
 
-	double diagonalDuration = glm::min(glm::abs(forwardDuration), glm::abs(rightDuration));
-	glm::vec3 diagonalDirection = forwardDirection + rightDirection;
-	if (glm::length(diagonalDirection) > 0.0f)
-		diagonalDirection = glm::normalize(diagonalDirection);
-	glm::vec3 diagonalMovement = static_cast<float>(diagonalDuration) * diagonalDirection;
+		glm::vec3 forwardDirection = static_cast<float>(glm::sign(forwardDuration))* front;
+		glm::vec3 rightDirection = static_cast<float>(glm::sign(rightDuration))* glm::normalize(glm::cross(front, up));
 
-	double axisDuration = glm::max(glm::abs(forwardDuration), glm::abs(rightDuration)) - diagonalDuration;
-	glm::vec3 axisDirection = glm::abs(forwardDuration) > glm::abs(rightDuration) ? forwardDirection : rightDirection;
-	glm::vec3 axisMovement = static_cast<float>(axisDuration)* axisDirection;
+		double diagonalDuration = glm::min(glm::abs(forwardDuration), glm::abs(rightDuration));
+		glm::vec3 diagonalDirection = forwardDirection + rightDirection;
+		if (glm::length(diagonalDirection) > 0.0f)
+			diagonalDirection = glm::normalize(diagonalDirection);
+		glm::vec3 diagonalMovement = static_cast<float>(diagonalDuration)* diagonalDirection;
 
-	camera->pos += (diagonalMovement + axisMovement) * camera->speed;
+		double axisDuration = glm::max(glm::abs(forwardDuration), glm::abs(rightDuration)) - diagonalDuration;
+		glm::vec3 axisDirection = glm::abs(forwardDuration) > glm::abs(rightDuration) ? forwardDirection : rightDirection;
+		glm::vec3 axisMovement = static_cast<float>(axisDuration)* axisDirection;
+
+		camera->pos += (diagonalMovement + axisMovement) * camera->speed;
+		camera->needUpdateV = true;
+	}
 }
 
 void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point &previousTime)

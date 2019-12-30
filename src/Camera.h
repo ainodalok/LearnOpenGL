@@ -30,6 +30,9 @@ public:
 	glm::vec3 pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	glm::quat orientation = glm::quat(glm::vec3(0.0f, 0.0f, 0.0f));;
 	float speed = 0.005f;
+	bool needUpdateV;
+	bool wasUpdatedV = false;
+	bool wasUpdatedP = false;
 
 private:
 	glm::mat4 V;

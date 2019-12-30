@@ -12,15 +12,13 @@ class Input
 {
 private:
 	typedef int Key;
-
-	typedef struct
+	typedef struct KeyEvent
 	{
 		int key;
 		int action;
 		std::chrono::high_resolution_clock::time_point timestamp;
 	} KeyEvent;
-
-	typedef struct
+	typedef struct KeyData
 	{
 		//Accumulates duration of several keypresses
 		double duration; //After frame finishes becomes 0

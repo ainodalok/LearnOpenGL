@@ -33,9 +33,51 @@ Renderer::Renderer()
 	glActiveTexture(GL_TEXTURE0 + 1);
 	loadTexture("textures/container2_specular.png", GL_RGB, GL_RGBA);
 
+	glGenBuffers(1, &UBOlight);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOlight);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLight) * POINT_LIGHTS_NUMBER + sizeof(DirSpotLight), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOlight, 0, sizeof(PointLight) * POINT_LIGHTS_NUMBER + sizeof(DirSpotLight));
+	dirSpotLight =
+	{
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::cos(glm::radians(12.5f)),
+		glm::vec3(1.0f, 1.0f, 1.0f),
+		glm::cos(glm::radians(15.0f)),
+		glm::vec3(1.0f, 1.0f, 1.0f),
+		1.0f,
+		glm::vec3(0.05f, 0.05f, 0.05f),
+		0.07f,
+		glm::vec3(0.4f, 0.4f, 0.4f),
+		0.017f,
+		glm::vec4(-0.2f, -1.0f, -0.3f, 0.0f),
+		glm::vec3(0.5f, 0.5f, 0.5f)
+	};
+	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
+	{
+		pointLights.push_back
+		({
+			pointLightPositions[i],
+			glm::vec3(0.05f, 0.05f, 0.05f),
+			1.0f,
+			glm::vec3(0.8f, 0.8f, 0.8f),
+			0.09f,
+			glm::vec3(1.0f, 1.0f, 1.0f),
+			0.032f
+		});
+	}
+
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLights.size() * sizeof(pointLights[0]), pointLights.data());
+	glBufferSubData(GL_UNIFORM_BUFFER, pointLights.size() * sizeof(pointLights[0]), sizeof(dirSpotLight), &dirSpotLight);
+
 	//Object program
 	programs.push_back(0);
 	programs[0] = new Shader("shaders/object.vert", "null", "shaders/object.frag");
+	programs[0]->use();
+	//Material
+	glUniform1i(3, 0);	//Diffuse texture
+	glUniform1i(4, 1);	//Specular texture
+	glUniform1f(5, 32.0f);	//Specular object shininess
 	//Light program
 	programs.push_back(0);
 	programs[1] = new Shader("shaders/lamp.vert", "null", "shaders/lamp.frag");
@@ -75,55 +117,53 @@ void Renderer::loadTexture(const std::string &texturePath, GLint internalFormat,
 	textures.push_back(texture);
 }
 
-void Renderer::render(const Camera& camera, bool wireframe)
+void Renderer::render(Camera& camera, bool wireframe)
 {
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	glm::mat4 lightM = glm::mat4(1.0f);
-	//lightM = glm::rotate(lightM, static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 1.0f, 0.0f));
-	//lightM = glm::translate(lightM, lightPosition);
-	lightM = glm::translate(lightM, camera.pos); //Flashlight
-
 	//Object
 	programs[0]->use();
 	glBindVertexArray(VAOs[0]);
-	glUniform1i(3, 0);	//Diffuse texture
-	glUniform1i(4, 1);	//Specular texture
-	glUniform1f(5, 32.0f);	//Specular object shininess
-	glUniform4fv(6, 1, glm::value_ptr(camera.getV() * lightM * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));	//viewspace position
-	//glUniform4fv(6, 1, glm::value_ptr(glm::vec4(glm::transpose(glm::inverse(glm::mat3(camera.getV() * lightM))) * -lightPosition, 0.0f)));	//Direction from light source viewspace, scale independent
-	glUniform3f(7, 0.2f, 0.2f, 0.2f);	//Ambient light color
-	glUniform3f(8, 0.5f, 0.5f, 0.5f);	//Diffuse light color
-	glUniform3f(9, 1.0f, 1.0f, 1.0f);	//Specualr light color
-	glUniform1f(10, 1.0f);	//Attenuation constant
-	glUniform1f(11, 0.09f);	//Attenuation linear
-	glUniform1f(12, 0.032f);	//Attenuation quadratic
-	glUniform4fv(13, 1, glm::value_ptr(glm::vec4(glm::transpose(glm::inverse(glm::mat3(camera.getV() * lightM))) * (camera.orientation * camera.initialFront), 0.0f))); //Direction of spotlight
-	glUniform1f(14, glm::cos(glm::radians(12.5f))); //Spotlight inner cutoff angle cosine value
-	glUniform1f(15, glm::cos(glm::radians(17.5f))); //Spotlight outer cutoff angle cosine value
+
+	if (camera.wasUpdatedV)
+	{
+		//Light UBO
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOlight);
+		dirSpotLight.directionDir = glm::vec4(glm::mat3(camera.getV()) * dirLightDirection, 0.0f);
+		for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
+		{
+			pointLights[i].position = camera.getV() * pointLightPositions[i];
+			glBufferSubData(GL_UNIFORM_BUFFER, i * sizeof(PointLight), sizeof(pointLights[i].position), glm::value_ptr(pointLights[i].position));
+		}
+		glBufferSubData(GL_UNIFORM_BUFFER, pointLights.size() * sizeof(PointLight) + 80, sizeof(dirSpotLight.directionDir), glm::value_ptr(dirSpotLight.directionDir));
+	}
 
 	for (unsigned int i = 0; i < 10; i++)
 	{
 		glm::mat4 objectM = glm::translate(cubePositions[i]);
-		objectM = glm::rotate(objectM,  glm::radians(static_cast<float>(glfwGetTime()) * 50.0f + 20 * i), glm::vec3(0.5f, 1.0f, 0.0f));
-		
+		objectM = glm::rotate(objectM, glm::radians(static_cast<float>(glfwGetTime()) * 50.0f + 20 * i), glm::vec3(0.5f, 1.0f, 0.0f));
 		glm::mat4 objectVM = camera.getV() * objectM;
+
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
 		glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(objectVM));	//VM
 		glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(objectVM)))));	//transposedInvertedVM
-
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
+	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
+	{
+		//Light, not flashlight
+		programs[1]->use();
+		glBindVertexArray(VAOs[1]);
+		glm::mat4 lightM = glm::translate(glm::vec3(pointLightPositions[i]));
+		lightM = glm::scale(lightM, glm::vec3(0.2f));
+		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
 	
-	lightM = glm::scale(lightM, glm::vec3(0.2f));
-
-	//Light, not flashlight
-	//programs[1]->use();
-	//glBindVertexArray(VAOs[1]);
-	//glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
-	//glDrawArrays(GL_TRIANGLES, 0, 36);
+	camera.wasUpdatedP = false;
+	camera.wasUpdatedV = false;
 
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
