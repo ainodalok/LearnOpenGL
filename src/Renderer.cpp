@@ -147,15 +147,15 @@ void Renderer::render(Camera& camera, bool wireframe)
 
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
 		glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(objectVM));	//VM
-		glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::inverse(glm::mat3(objectVM)))));	//transposedInvertedVM
+		glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::adjugate(glm::mat3(objectVM)))));	//transposedInvertedVM
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
+	//Light, not flashlight
+	programs[1]->use();
+	glBindVertexArray(VAOs[1]);
 	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
 	{
-		//Light, not flashlight
-		programs[1]->use();
-		glBindVertexArray(VAOs[1]);
 		glm::mat4 lightM = glm::translate(glm::vec3(pointLightPositions[i]));
 		lightM = glm::scale(lightM, glm::vec3(0.2f));
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM

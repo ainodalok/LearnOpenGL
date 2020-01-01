@@ -10,6 +10,7 @@
 #include <stdlib.h> 
 #include <iostream>
 #include <chrono>
+#include <limits>
 
 #include "UI.h"
 #include "Renderer.h"
@@ -41,6 +42,9 @@ private:
 	float previousMouseY = 0.0f;
 	float sensitivity = 0.1f;
 	bool firstCallbackInFocus = true;
+
+	unsigned long long int numberOfFrames = 0;
+	double timeSinceStart = 0.0;
 
 	void draw();
 	void handleInput();

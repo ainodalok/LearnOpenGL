@@ -248,11 +248,22 @@ void Application::handleInput()
 void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point &previousTime)
 {
 	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
-	double timePassed = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(currentTime - previousTime).count();
+	std::chrono::duration<double, std::milli> frameDuration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(currentTime - previousTime);
+	double timePassed = frameDuration.count();
+	if ((timeSinceStart > (std::numeric_limits<double>::max() - timePassed)) || (numberOfFrames > (std::numeric_limits<unsigned long long>::max() - 1)))
+	{
+		timeSinceStart = 0.0;
+		numberOfFrames = 0;
+	}
+	timeSinceStart += timePassed;
+	numberOfFrames++;
+
 	ImGui::SetNextWindowBgAlpha(0.35f);
 	ImGui::Begin("FPS overlay", (bool*)0, overlayBox);
 		ImGui::Text("%f ms/Frame", timePassed);
 		ImGui::Text("%d FPS", static_cast<unsigned>(1000.0 / timePassed));
+		ImGui::Text("%f AVG ms/Frame", timeSinceStart / numberOfFrames);
+		ImGui::Text("%d AVG FPS", static_cast<unsigned>(1000.0 / (timeSinceStart / numberOfFrames)));
 	ImGui::End();
 	previousTime = currentTime;
 }
