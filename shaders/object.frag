@@ -105,6 +105,4 @@ void main()
 		result += calcPointLight(pointLight[i], normal, viewDirection, diffuseMaterial, specularMaterial, fragPositionView);
 	result += calcSpotLight(dirSpotLight, normal, viewDirection, diffuseMaterial, specularMaterial, fragPositionView);
 	fragColor = vec4(result, 1.0f);
-
-	fragColor = vec4(vec3(linearizeDepth(gl_FragCoord.z, 0.1f, 100.0f)), 1.0f);
 }

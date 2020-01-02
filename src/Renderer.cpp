@@ -60,6 +60,8 @@ Renderer::Renderer()
 	//Light program
 	programs.push_back(0);
 	programs[1] = new Shader("shaders/lamp.vert", "null", "shaders/lamp.frag");
+	programs.push_back(0);
+	programs[2] = new Shader("shaders/stencil.vert", "null", "shaders/stencil.frag");
 
 	model = new Model("models/nanosuit/nanosuit.obj");
 }
@@ -104,9 +106,6 @@ void Renderer::render(Camera& camera, bool wireframe)
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	//Object
-	programs[0]->use();
-
 	if (camera.wasUpdatedV)
 	{
 		//Light UBO
@@ -123,18 +122,41 @@ void Renderer::render(Camera& camera, bool wireframe)
 	glm::mat4 objectM = glm::scale(glm::vec3(0.2f));
 	glm::mat4 objectVM = camera.getV() * objectM;
 
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should update the stencil buffer
+	glStencilMask(0xFF); // enable writing to the stencil buffer
+	glClear(GL_STENCIL_BUFFER_BIT);
+	//Object
+	programs[0]->use();
 	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
 	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(objectVM));	//VM
 	glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::adjugate(glm::mat3(objectVM)))));	//transposedAdjugateVM
 	model->draw(*programs[0]);
 
-	//Light, not flashlight
-	programs[1]->use();
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilMask(0x00); // disable writing to the stencil buffer
+	//outline
+	programs[2]->use();
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
+	model->draw(*programs[2]);
+	
 	glBindVertexArray(VAOs[0]);
 	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
 	{
 		glm::mat4 lightM = glm::translate(glm::vec3(pointLightPositions[i]));
 		lightM = glm::scale(lightM, glm::vec3(0.2f));
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should update the stencil buffer
+		glStencilMask(0xFF); // enable writing to the stencil buffer
+		glClear(GL_STENCIL_BUFFER_BIT);
+		programs[1]->use();
+		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		lightM = glm::scale(lightM, glm::vec3(1.06f));
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF); // all fragments should update the stencil buffer
+		glStencilMask(0x00); // enable writing to the stencil buffer
+		programs[2]->use();
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}

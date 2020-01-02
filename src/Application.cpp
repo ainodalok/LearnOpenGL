@@ -153,6 +153,7 @@ Application::Application()
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
 
 	input = new Input();
 	ui = new UI(window);
@@ -201,7 +202,8 @@ void Application::draw()
 	glViewport(0, 0, width, height);
 	//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glStencilMask(0xFF);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	camera->updateV();
 	renderer->render(*camera, false);
