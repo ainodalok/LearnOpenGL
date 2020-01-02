@@ -2,7 +2,7 @@
 
 Renderer::Renderer()
 {
-	//Object VAO
+	//Light VAO
 	VAOs.push_back(0);
 	glGenVertexArrays(1, &VAOs[0]);
 	glBindVertexArray(VAOs[0]);
@@ -10,28 +10,9 @@ Renderer::Renderer()
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float))); //Positions
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); //Normals
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //Texture coords
-	glEnableVertexAttribArray(2);
-
-	//Light VAO
-	VAOs.push_back(0);
-	glGenVertexArrays(1, &VAOs[1]);
-	glBindVertexArray(VAOs[1]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
-
-	glActiveTexture(GL_TEXTURE0);
-	loadTexture("textures/container2.png", GL_RGB, GL_RGBA);
-	glActiveTexture(GL_TEXTURE0 + 1);
-	loadTexture("textures/container2_specular.png", GL_RGB, GL_RGBA);
 
 	glGenBuffers(1, &UBOlight);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBOlight);
@@ -75,16 +56,17 @@ Renderer::Renderer()
 	programs[0] = new Shader("shaders/object.vert", "null", "shaders/object.frag");
 	programs[0]->use();
 	//Material
-	glUniform1i(3, 0);	//Diffuse texture
-	glUniform1i(4, 1);	//Specular texture
-	glUniform1f(5, 32.0f);	//Specular object shininess
+	glUniform1f(3, 32.0f);	//Specular object shininess
 	//Light program
 	programs.push_back(0);
 	programs[1] = new Shader("shaders/lamp.vert", "null", "shaders/lamp.frag");
+
+	model = new Model("models/nanosuit/nanosuit.obj");
 }
 
 Renderer::~Renderer()
 {
+	delete model;
 	for (int i = 0; i < programs.size(); i++)
 		delete programs[i];
 	for (int i = 0; i < VAOs.size(); i++)
@@ -124,7 +106,6 @@ void Renderer::render(Camera& camera, bool wireframe)
 
 	//Object
 	programs[0]->use();
-	glBindVertexArray(VAOs[0]);
 
 	if (camera.wasUpdatedV)
 	{
@@ -139,21 +120,17 @@ void Renderer::render(Camera& camera, bool wireframe)
 		glBufferSubData(GL_UNIFORM_BUFFER, pointLights.size() * sizeof(PointLight) + 80, sizeof(dirSpotLight.directionDir), glm::value_ptr(dirSpotLight.directionDir));
 	}
 
-	for (unsigned int i = 0; i < 10; i++)
-	{
-		glm::mat4 objectM = glm::translate(cubePositions[i]);
-		objectM = glm::rotate(objectM, glm::radians(static_cast<float>(glfwGetTime()) * 50.0f + 20 * i), glm::vec3(0.5f, 1.0f, 0.0f));
-		glm::mat4 objectVM = camera.getV() * objectM;
+	glm::mat4 objectM = glm::scale(glm::vec3(0.2f));
+	glm::mat4 objectVM = camera.getV() * objectM;
 
-		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
-		glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(objectVM));	//VM
-		glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::adjugate(glm::mat3(objectVM)))));	//transposedAdjugateVM
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-	}
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
+	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(objectVM));	//VM
+	glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::adjugate(glm::mat3(objectVM)))));	//transposedAdjugateVM
+	model->draw(*programs[0]);
 
 	//Light, not flashlight
 	programs[1]->use();
-	glBindVertexArray(VAOs[1]);
+	glBindVertexArray(VAOs[0]);
 	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
 	{
 		glm::mat4 lightM = glm::translate(glm::vec3(pointLightPositions[i]));

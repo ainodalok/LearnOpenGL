@@ -257,7 +257,7 @@ void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_p
 	}
 	timeSinceStart += timePassed;
 	numberOfFrames++;
-
+	
 	ImGui::SetNextWindowBgAlpha(0.35f);
 	ImGui::Begin("FPS overlay", (bool*)0, overlayBox);
 		ImGui::Text("%f ms/Frame", timePassed);

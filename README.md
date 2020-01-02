@@ -6,5 +6,6 @@ Deps:
 - GLFW
 - GLAD OpenGL Core 4.6
 - Dear ImGui
-- glm
-- stb
+- GLM
+- stb_image
+- Assimp

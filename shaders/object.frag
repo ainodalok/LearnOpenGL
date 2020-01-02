@@ -1,11 +1,4 @@
 #version 460 core
-struct Material //3 locations
-{
-    sampler2D diffuse;
-    sampler2D specular;
-    float shininess;
-};
-
 struct PointLight		//Size 64
 {						//Alignment 16
 	vec4 position;		//0
@@ -39,7 +32,9 @@ layout (location = 0) in vec4 fragNormalView;
 layout (location = 1) in vec4 fragPositionView;
 layout (location = 2) in vec2 fragTextureUV;
 
-layout (location = 3) uniform Material material;
+layout (binding = 0) uniform sampler2D diffuse;
+layout (binding = 1) uniform sampler2D specular;
+layout (location = 3) uniform float shininess;
 
 layout (binding = 0, std140) uniform Light
 {
@@ -54,7 +49,7 @@ vec3 calcDirLight(DirSpotLight light, vec4 normal, vec4 viewDirection, vec3 diff
 	vec3 ambient = light.ambientDir * diffuseMaterial;
 	vec4 lightDirection = vec4(normalize(-light.directionDir.xyz), 0.0f);
 	vec3 diffuse = light.diffuseDir * diffuseMaterial * max(dot(normal, lightDirection), 0.0f);
-	vec3 specular = light.specularDir * specularMaterial * pow(max(dot(viewDirection, reflect(-lightDirection, normal)), 0.0f), material.shininess);
+	vec3 specular = light.specularDir * specularMaterial * pow(max(dot(viewDirection, reflect(-lightDirection, normal)), 0.0f), shininess);
 
 	return ambient + diffuse + specular;
 }
@@ -64,7 +59,7 @@ vec3 calcPointLight(PointLight light, vec4 normal, vec4 viewDirection, vec3 diff
 	vec3 ambient = light.ambient * diffuseMaterial;
 	vec4 lightDirectionFromFragment = vec4(normalize((light.position - fragPosition).xyz), 0.0f);
 	vec3 diffuse = light.diffuse * diffuseMaterial * max(dot(normal, lightDirectionFromFragment), 0.0f);
-	vec3 specular = light.specular * specularMaterial * pow(max(dot(viewDirection, reflect(-lightDirectionFromFragment, normal)), 0.0f), material.shininess);
+	vec3 specular = light.specular * specularMaterial * pow(max(dot(viewDirection, reflect(-lightDirectionFromFragment, normal)), 0.0f), shininess);
 	float distanceToLight = distance(light.position, fragPosition);
 	float attenuation = 1.0f / (light.constant + light.linear * distanceToLight + light.quadratic * distanceToLight * distanceToLight);
 
@@ -81,7 +76,7 @@ vec3 calcSpotLight(DirSpotLight light, vec4 normal, vec4 viewDirection, vec3 dif
 	{
 		vec3 ambient = light.ambientSpot * diffuseMaterial;
 		vec3 diffuse = light.diffuseSpot * diffuseMaterial * max(dot(normal, viewDirection), 0.0f);
-		vec3 specular = light.specularSpot * specularMaterial * pow(max(dot(viewDirection, reflect(-viewDirection, normal)), 0.0f), material.shininess);
+		vec3 specular = light.specularSpot * specularMaterial * pow(max(dot(viewDirection, reflect(-viewDirection, normal)), 0.0f), shininess);
 		float distanceToLight = length(fragPosition);
 		float attenuation = 1.0f / (light.constantSpot + light.linearSpot * distanceToLight + light.quadraticSpot * distanceToLight * distanceToLight);
 
@@ -95,8 +90,9 @@ void main()
 {
 	vec4 normal = vec4(normalize(fragNormalView.xyz), 0.0f);
 	vec4 viewDirection = vec4(normalize(-fragPositionView.xyz), 0.0f);
-	vec3 diffuseMaterial = vec3(texture(material.diffuse, fragTextureUV));
-	vec3 specularMaterial = vec3(texture(material.specular, fragTextureUV));
+	vec3 diffuseMaterial = vec3(texture(diffuse, fragTextureUV));
+	vec3 specularMaterial = vec3(texture(specular, fragTextureUV));
+	//vec3 specularMaterial = vec3(0.0f);
 	vec3 result = vec3(0);
 	result += calcDirLight(dirSpotLight, normal, viewDirection, diffuseMaterial, specularMaterial);
 	for(int i = 0; i < POINT_LIGHTS_NUMBER; i++)

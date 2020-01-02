@@ -1,19 +1,16 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <glad/glad.h>
+#include "Shader.h"
+#include "Camera.h"
+#include "Model.h"
+
 #include <GLFW/glfw3.h>
 #include <glm/gtc/constants.hpp>
-#include <stb_image.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/transform.hpp>
 #include <glm/gtx/matrix_operation.hpp>
 #include <vector>
 
-#include "Shader.h"
-#include "Camera.h"
+
 
 #define POINT_LIGHTS_NUMBER 4
 
@@ -128,6 +125,8 @@ public:
 	DirSpotLight dirSpotLight;
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
+	Model* model;
+	
 
 	glm::vec4 dirLightDirection = glm::vec4(-0.2f, -1.0f, -0.3f, 0.0f);
 
