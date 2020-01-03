@@ -2,7 +2,7 @@
 
 Renderer::Renderer()
 {
-	//Cube VAO
+	//VAO
 	VAOs.push_back(0);
 	glGenVertexArrays(1, &VAOs[0]);
 	glBindVertexArray(VAOs[0]);
@@ -14,16 +14,6 @@ Renderer::Renderer()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	//Plane VAO
-	VAOs.push_back(0);
-	glGenVertexArrays(1, &VAOs[1]);
-	glBindVertexArray(VAOs[1]);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(sizeof(cubeVertices) + 0 * sizeof(float)));
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(sizeof(cubeVertices) + 3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	loadTexture("textures/marble.jpg");
@@ -129,10 +119,9 @@ void Renderer::render(Camera& camera, bool wireframe)
 		glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 	}
 
-	glBindVertexArray(VAOs[1]);
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, objectUBOOffset * 2, sizeof(ObjectUBO));
-	glDrawArrays(GL_TRIANGLES, 0, sizeof(planeVertices) / sizeof(float) / 5);
+	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
 
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
