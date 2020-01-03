@@ -87,7 +87,7 @@ GLuint Shader::compileShaderFromCode(GLenum shaderStage, const std::string& shad
 {
 	GLuint shader = glCreateShader(shaderStage);
 	const char* shaderCodeC_STR = shaderCode.c_str();
-	glShaderSource(shader, 1, &shaderCodeC_STR, NULL);
+	glShaderSource(shader, 1, &shaderCodeC_STR, nullptr);
 	glCompileShader(shader);
 	switch (shaderStage)
 	{
@@ -114,7 +114,7 @@ void Shader::checkCompilerErrors(GLuint id, const char* type)
 		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
 		if (!success)
 		{
-			glGetShaderInfoLog(id, 1024, NULL, infoLog);
+			glGetShaderInfoLog(id, 1024, nullptr, infoLog);
 			std::cerr << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 		}
 	}
@@ -123,7 +123,7 @@ void Shader::checkCompilerErrors(GLuint id, const char* type)
 		glGetProgramiv(id, GL_LINK_STATUS, &success);
 		if (!success)
 		{
-			glGetProgramInfoLog(id, 1024, NULL, infoLog);
+			glGetProgramInfoLog(id, 1024, nullptr, infoLog);
 			std::cerr << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 		}
 	}

@@ -150,8 +150,7 @@ GLuint Model::textureFromFile(const std::string &path, const std::string &direct
 	else
 	{
 		std::cerr << "Texture failed to load at path: " << fullPath << std::endl;
-		stbi_image_free(data);
 	}
-
+	stbi_image_free(data);
 	return textureID;
 }

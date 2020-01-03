@@ -132,7 +132,7 @@ Application::Application()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	window = glfwCreateWindow(1280, 720, "Application", /*glfwGetPrimaryMonitor()*/NULL, NULL);
+	window = glfwCreateWindow(1280, 720, "Application", /*glfwGetPrimaryMonitor()*/nullptr, nullptr);
 	if (!window)
 		std::cerr << "Failed to create window" << std::endl;
 	glfwSetWindowSizeLimits(window, 640, 480, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -153,7 +153,6 @@ Application::Application()
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
 
 	input = new Input();
 	ui = new UI(window);
@@ -203,7 +202,7 @@ void Application::draw()
 	//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glStencilMask(0xFF);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	camera->updateV();
 	renderer->render(*camera, false);

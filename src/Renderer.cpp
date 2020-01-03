@@ -2,82 +2,86 @@
 
 Renderer::Renderer()
 {
-	//Light VAO
+	//Cube VAO
 	VAOs.push_back(0);
 	glGenVertexArrays(1, &VAOs[0]);
 	glBindVertexArray(VAOs[0]);
-
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float)));
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices) + sizeof(planeVertices), nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertices), cubeVertices);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(cubeVertices), sizeof(planeVertices), planeVertices);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
-	glGenBuffers(1, &UBOlight);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBOlight);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLight) * POINT_LIGHTS_NUMBER + sizeof(DirSpotLight), NULL, GL_STATIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOlight, 0, sizeof(PointLight) * POINT_LIGHTS_NUMBER + sizeof(DirSpotLight));
-	dirSpotLight =
-	{
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::cos(glm::radians(12.5f)),
-		glm::vec3(1.0f, 1.0f, 1.0f),
-		glm::cos(glm::radians(15.0f)),
-		glm::vec3(1.0f, 1.0f, 1.0f),
-		1.0f,
-		glm::vec3(0.05f, 0.05f, 0.05f),
-		0.07f,
-		glm::vec3(0.4f, 0.4f, 0.4f),
-		0.017f,
-		glm::vec4(-0.2f, -1.0f, -0.3f, 0.0f),
-		glm::vec3(0.5f, 0.5f, 0.5f)
-	};
-	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
-	{
-		pointLights.push_back
-		({
-			pointLightPositions[i],
-			glm::vec3(0.05f, 0.05f, 0.05f),
-			1.0f,
-			glm::vec3(0.8f, 0.8f, 0.8f),
-			0.09f,
-			glm::vec3(1.0f, 1.0f, 1.0f),
-			0.032f
-		});
-	}
+	//Plane VAO
+	VAOs.push_back(0);
+	glGenVertexArrays(1, &VAOs[1]);
+	glBindVertexArray(VAOs[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(sizeof(cubeVertices) + 0 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(sizeof(cubeVertices) + 3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, pointLights.size() * sizeof(pointLights[0]), pointLights.data());
-	glBufferSubData(GL_UNIFORM_BUFFER, pointLights.size() * sizeof(pointLights[0]), sizeof(dirSpotLight), &dirSpotLight);
+	loadTexture("textures/marble.jpg");
+	loadTexture("textures/metal.png");
+
+	int alignment = 0;
+	glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
+	objectUBOOffset = sizeof(ObjectUBO) + (alignment - sizeof(ObjectUBO) % alignment);
+
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, objectUBOOffset * (sizeof(objectUBOs) / sizeof(ObjectUBO)), nullptr, GL_STATIC_DRAW);
 
 	//Object program
 	programs.push_back(0);
 	programs[0] = new Shader("shaders/object.vert", "null", "shaders/object.frag");
-	programs[0]->use();
-	//Material
-	glUniform1f(3, 32.0f);	//Specular object shininess
-	//Light program
-	programs.push_back(0);
-	programs[1] = new Shader("shaders/lamp.vert", "null", "shaders/lamp.frag");
-	programs.push_back(0);
-	programs[2] = new Shader("shaders/stencil.vert", "null", "shaders/stencil.frag");
-
-	model = new Model("models/nanosuit/nanosuit.obj");
 }
 
 Renderer::~Renderer()
 {
-	delete model;
 	for (int i = 0; i < programs.size(); i++)
 		delete programs[i];
 	for (int i = 0; i < VAOs.size(); i++)
 		glDeleteVertexArrays(1, &VAOs[i]);
 	glDeleteBuffers(1, &VBO);
+	for (int i = 0; i < textures.size(); i++)
+		glDeleteTextures(1, &textures[i]);
 }
 
-void Renderer::loadTexture(const std::string &texturePath, GLint internalFormat, GLenum format)
+void Renderer::loadTexture(const std::string &texturePath)
 {
+	int width, height, nrChannels;
+	GLubyte* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+	if (!data)
+	{
+		std::cerr << "Failed to load texture - " << texturePath << std::endl;
+		stbi_image_free(data);
+		return;
+	}
+	GLenum format;
+	switch (nrChannels)
+	{
+	case 1:
+		format = GL_RED;
+		break;
+	case 2:
+		format = GL_RG;
+		break;
+	case 3:
+		format = GL_RGB;
+		break;
+	case 4:
+		format = GL_RGBA;
+		break;
+	default:
+		format = GL_RGB;
+		break;
+	}
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -88,14 +92,7 @@ void Renderer::loadTexture(const std::string &texturePath, GLint internalFormat,
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, aniso);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	int width, height, nrChannels;
-	GLubyte* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
-	if (!data)
-	{
-		std::cerr << "Failed to load texture - " << texturePath << std::endl;
-		exit(1);
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	stbi_image_free(data);
 	textures.push_back(texture);
@@ -106,63 +103,42 @@ void Renderer::render(Camera& camera, bool wireframe)
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	if (camera.wasUpdatedV)
+	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
-		//Light UBO
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOlight);
-		dirSpotLight.directionDir = glm::vec4(glm::mat3(camera.getV()) * dirLightDirection, 0.0f);
-		for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
-		{
-			pointLights[i].position = camera.getV() * pointLightPositions[i];
-			glBufferSubData(GL_UNIFORM_BUFFER, i * sizeof(PointLight), sizeof(pointLights[i].position), glm::value_ptr(pointLights[i].position));
-		}
-		glBufferSubData(GL_UNIFORM_BUFFER, pointLights.size() * sizeof(PointLight) + 80, sizeof(dirSpotLight.directionDir), glm::value_ptr(dirSpotLight.directionDir));
+		PV = camera.getP() * camera.getV();
+		glm::mat4 M;
+
+		M = glm::translate(glm::vec3(-1.0f, 0.0f, -1.0f));
+		objectUBOs[0].PVM = PV * M;
+		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
+		objectUBOs[1].PVM = PV * M;
+		objectUBOs[2].PVM = PV;
+		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+		void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+		for (unsigned long long i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
+			memcpy((static_cast<unsigned char*>(ptr) + objectUBOOffset * i), &objectUBOs[i], sizeof(ObjectUBO));
+		glUnmapBuffer(GL_UNIFORM_BUFFER);
 	}
 
-	glm::mat4 objectM = glm::scale(glm::vec3(0.2f));
-	glm::mat4 objectVM = camera.getV() * objectM;
-
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-	glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should update the stencil buffer
-	glStencilMask(0xFF); // enable writing to the stencil buffer
-	glClear(GL_STENCIL_BUFFER_BIT);
-	//Object
 	programs[0]->use();
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
-	glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(objectVM));	//VM
-	glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(glm::transpose(glm::adjugate(glm::mat3(objectVM)))));	//transposedAdjugateVM
-	model->draw(*programs[0]);
-
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-	glStencilMask(0x00); // disable writing to the stencil buffer
-	//outline
-	programs[2]->use();
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * objectVM));	//PVM
-	model->draw(*programs[2]);
-	
 	glBindVertexArray(VAOs[0]);
-	for (int i = 0; i < POINT_LIGHTS_NUMBER; i++)
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	for (unsigned int i = 0; i < 2; i++)
 	{
-		glm::mat4 lightM = glm::translate(glm::vec3(pointLightPositions[i]));
-		lightM = glm::scale(lightM, glm::vec3(0.2f));
-
-		glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should update the stencil buffer
-		glStencilMask(0xFF); // enable writing to the stencil buffer
-		glClear(GL_STENCIL_BUFFER_BIT);
-		programs[1]->use();
-		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		lightM = glm::scale(lightM, glm::vec3(1.06f));
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF); // all fragments should update the stencil buffer
-		glStencilMask(0x00); // enable writing to the stencil buffer
-		programs[2]->use();
-		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(camera.getP() * camera.getV() * lightM));	//PVM
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, objectUBOOffset * i, sizeof(ObjectUBO));
+		glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 	}
-	
-	camera.wasUpdatedP = false;
-	camera.wasUpdatedV = false;
+
+	glBindVertexArray(VAOs[1]);
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, objectUBOOffset * 2, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(planeVertices) / sizeof(float) / 5);
+
+	if (camera.wasUpdatedP || camera.wasUpdatedV)
+	{
+		camera.wasUpdatedP = false;
+		camera.wasUpdatedV = false;
+	}
 
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
