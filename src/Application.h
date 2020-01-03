@@ -45,6 +45,8 @@ private:
 
 	unsigned long long int numberOfFrames = 0;
 	double timeSinceStart = 0.0;
+	unsigned long long int avgNumberOfFrames = 0;
+	double avgTimeSinceStart = 0.0;
 
 	void draw();
 	void handleInput();
