@@ -258,7 +258,7 @@ void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_p
 	double timePassed = frameDuration.count();
 	timeSinceStart += timePassed;
 	numberOfFrames++;
-	if (timeSinceStart > 2000.0 || avgNumberOfFrames == 0)
+	if (timeSinceStart > 500.0 || avgNumberOfFrames == 0)
 	{
 		avgTimeSinceStart = timeSinceStart;
 		avgNumberOfFrames = numberOfFrames;

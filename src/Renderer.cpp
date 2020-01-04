@@ -19,13 +19,13 @@ Renderer::Renderer()
 	loadTexture("textures/marble.jpg");
 	loadTexture("textures/metal.png");
 
-	int alignment = 0;
-	glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
-	objectUBOOffset = sizeof(ObjectUBO) + (alignment - sizeof(ObjectUBO) % alignment);
-
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, objectUBOOffset * (sizeof(objectUBOs) / sizeof(ObjectUBO)), nullptr, GL_STATIC_DRAW);
+	for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
+	{
+		UBOs.push_back(0);
+		glGenBuffers(1, &UBOs[i]);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i]);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(ObjectUBO), nullptr, GL_STATIC_DRAW);
+	}
 
 	//Object program
 	programs.push_back(0);
@@ -103,24 +103,23 @@ void Renderer::render(Camera& camera, bool wireframe)
 		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
 		objectUBOs[1].PVM = PV * M;
 		objectUBOs[2].PVM = PV;
-		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-		void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-		for (unsigned long long i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
-			memcpy((static_cast<unsigned char*>(ptr) + objectUBOOffset * i), &objectUBOs[i], sizeof(ObjectUBO));
-		glUnmapBuffer(GL_UNIFORM_BUFFER);
+		for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
+		{
+			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i]);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i]);
+		}
 	}
 
 	programs[0]->use();
-	glBindVertexArray(VAOs[0]);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	for (unsigned int i = 0; i < 2; i++)
 	{
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, objectUBOOffset * i, sizeof(ObjectUBO));
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[i], 0, sizeof(ObjectUBO));
 		glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 	}
 
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, objectUBOOffset * 2, sizeof(ObjectUBO));
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
 	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
 
 	if (camera.wasUpdatedP || camera.wasUpdatedV)

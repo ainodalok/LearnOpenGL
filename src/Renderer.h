@@ -85,7 +85,7 @@ private:
 	GLuint VBO;
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
-    GLuint UBO;
+    std::vector<GLuint> UBOs;
     ObjectUBO objectUBOs[3];
     unsigned long long objectUBOOffset;
 	Model* model;
