@@ -173,7 +173,10 @@ void Renderer::render(Camera& camera, bool wireframe)
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 	
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_ALWAYS, 0, 0xFF);
 	glStencilMask(0xFF);
+
+
 
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
