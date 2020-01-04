@@ -30,6 +30,8 @@ Renderer::Renderer()
 	//Object program
 	programs.push_back(0);
 	programs[0] = new Shader("shaders/object.vert", "null", "shaders/object.frag");
+	programs.push_back(0);
+	programs[1] = new Shader("shaders/stencil.vert", "null", "shaders/stencil.frag");
 }
 
 Renderer::~Renderer()
@@ -96,31 +98,82 @@ void Renderer::render(Camera& camera, bool wireframe)
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
 		PV = camera.getP() * camera.getV();
-		glm::mat4 M;
+		//glm::mat4 M;
 
-		M = glm::translate(glm::vec3(-1.0f, 0.0f, -1.0f));
-		objectUBOs[0].PVM = PV * M;
-		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
-		objectUBOs[1].PVM = PV * M;
+		//M = glm::translate(glm::vec3(-1.0f, 0.0f, -1.0f));
+		//objectUBOs[0].PVM = PV * M;
+		//M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
+		//objectUBOs[1].PVM = PV * M;
 		objectUBOs[2].PVM = PV;
-		for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
-		{
-			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i]);
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i]);
-		}
+		//for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
+		//{
+			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[2]);
+		//}
 	}
+
+	glm::mat4 M;
+
+	glDepthMask(GL_FALSE);
+	programs[0]->use();
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
+	glStencilFunc(GL_ALWAYS, 1000, 0xFF);
+	glStencilMask(0xFF);
+	M = glm::scale(glm::vec3(3.0f, 3.0f, 3.0f));
+	objectUBOs[2].PVM = PV * M;
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[2]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
+	glDepthMask(GL_TRUE);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	for (unsigned int i = 0; i < 2; i++)
-	{
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[i], 0, sizeof(ObjectUBO));
-		glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
-	}
+	glStencilFunc(GL_GEQUAL, 1, 0xFF);
+	glStencilMask(0xFF);
+	M = glm::translate(glm::vec3(-1.0f, 0.5f, -1.0f));
+	objectUBOs[0].PVM = PV * M;
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[0]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
-	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
+	programs[1]->use();
+	glStencilFunc(GL_GREATER, 1, 0xFF);
+	glStencilMask(0x00);
+	M = glm::translate(glm::vec3(-1.0f, 0.5f, -1.0f));
+	M = glm::scale(M, glm::vec3(1.02f, 1.02f, 1.02f));
+	objectUBOs[0].PVM = PV * M;
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[0]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
+
+	programs[0]->use();
+	glStencilFunc(GL_GEQUAL, 2, 0xFF);
+	glStencilMask(0xFF);
+	M = glm::translate(glm::vec3(2.0f, 0.5f, 0.0f));
+	objectUBOs[1].PVM = PV * M;
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[1]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
+
+	programs[1]->use();
+	glStencilFunc(GL_GREATER, 2, 0xFF);
+	glStencilMask(0x00);
+	M = glm::translate(glm::vec3(2.0f, 0.5f, 0.0f));
+	M = glm::scale(M, glm::vec3(1.202f, 1.202f, 1.202f));
+	objectUBOs[1].PVM = PV * M;
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[1]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
+	
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilMask(0xFF);
 
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
