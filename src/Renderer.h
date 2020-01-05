@@ -15,10 +15,11 @@
 class Renderer
 {
 public:
-	Renderer();
+	Renderer(int width, int height);
 	~Renderer();
 
 	void render(Camera &camera, bool wireframe);
+    void rebuildFramebuffer(int width, int height);
 
 private:
     typedef struct ObjectUBO
@@ -100,6 +101,9 @@ private:
         glm::vec3(0.5f,  0.0f, -0.6f)
     };
 
+    GLuint FBO = 0;
+    GLuint FBOtexture = 0;
+    GLuint RBO = 0;
 	std::vector<GLuint> VAOs;
 	GLuint VBO;
 	std::vector<GLuint> textures;

@@ -1,6 +1,6 @@
 #include "Renderer.h"
 
-Renderer::Renderer()
+Renderer::Renderer(int width, int height)
 {
 	//VAO
 	VAOs.push_back(0);
@@ -32,6 +32,10 @@ Renderer::Renderer()
 	//Object program
 	programs.push_back(0);
 	programs[0] = new Shader("shaders/object.vert", "null", "shaders/object.frag");
+	programs.push_back(0);
+	programs[1] = new Shader("shaders/screen.vert", "null", "shaders/screen.frag");
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	rebuildFramebuffer(width, height);
 }
 
 Renderer::~Renderer()
@@ -43,6 +47,9 @@ Renderer::~Renderer()
 	glDeleteBuffers(1, &VBO);
 	for (int i = 0; i < textures.size(); i++)
 		glDeleteTextures(1, &textures[i]);
+	glDeleteRenderbuffers(1, &RBO);
+	glDeleteTextures(1, &FBOtexture);
+	glDeleteFramebuffers(1, &FBO);
 }
 
 void Renderer::loadTexture(const std::string &texturePath, GLint wrapMode)
@@ -125,6 +132,8 @@ void Renderer::render(Camera& camera, bool wireframe)
 		}
 	}
 
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
@@ -146,6 +155,13 @@ void Renderer::render(Camera& camera, bool wireframe)
 		glDrawArrays(GL_TRIANGLES, (sizeof(cubeVertices) + sizeof(planeVertices)) / (sizeof(float) * 5), sizeof(transparentVertices) / (sizeof(float) * 5));
 	}
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_DEPTH_TEST);
+	programs[1]->use();
+	glBindTexture(GL_TEXTURE_2D, FBOtexture);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glEnable(GL_DEPTH_TEST);
+
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
 		camera.wasUpdatedP = false;
@@ -154,4 +170,32 @@ void Renderer::render(Camera& camera, bool wireframe)
 
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void Renderer::rebuildFramebuffer(int width, int height)
+{
+	if (FBO != 0)
+	{
+		glDeleteTextures(1, &FBOtexture);
+		glDeleteRenderbuffers(1, &RBO);
+	}
+	else
+	{
+		glGenFramebuffers(1, &FBO);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glGenTextures(1, &FBOtexture);
+	glBindTexture(GL_TEXTURE_2D, FBOtexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FBOtexture, 0);
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cerr << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 }

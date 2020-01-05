@@ -47,10 +47,11 @@ private:
 	double timeSinceStart = 0.0;
 	unsigned long long int avgNumberOfFrames = 0;
 	double avgTimeSinceStart = 0.0;
+	std::chrono::high_resolution_clock::time_point previousTime = std::chrono::high_resolution_clock::now();
 
 	void draw();
 	void handleInput();
-	void ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point& previousTime);
+	void ImGuiPerformanceBox();
 
 	static void glfwErrorCallback(int error, const char* description);
 	static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param);

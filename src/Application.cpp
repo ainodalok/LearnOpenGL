@@ -13,6 +13,8 @@ void Application::glfwFramebufferSizeCallback(GLFWwindow* window, int width, int
 	if (width > 0 && height > 0)
 	{
 		app->camera->updateP(width, height);
+		glViewport(0, 0, width, height);
+		app->renderer->rebuildFramebuffer(width, height);
 		app->draw();
 	}
 }
@@ -157,11 +159,12 @@ Application::Application()
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_STENCIL_TEST);
 	glEnable(GL_BLEND);
-
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	renderer = new Renderer(width, height);
 	input = new Input();
 	ui = new UI(window);
 	camera = new Camera(window);
-	renderer = new Renderer();
 }
 
 Application::~Application()
@@ -176,7 +179,6 @@ Application::~Application()
 
 void Application::executeLoop()
 {
-	std::chrono::high_resolution_clock::time_point previousTime = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -190,7 +192,7 @@ void Application::executeLoop()
 		handleInput();
 		input->frameFinished();
 
-		ImGuiPerformanceBox(previousTime);
+		ImGuiPerformanceBox();
 
 		ImGui::Render();
 
@@ -199,14 +201,7 @@ void Application::executeLoop()
 }
 
 void Application::draw()
-{
-	int width, height;
-	glfwGetFramebufferSize(window, &width, &height);
-	glViewport(0, 0, width, height);
-	//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+{	
 	camera->updateV();
 	renderer->render(*camera, false);
 
@@ -254,7 +249,7 @@ void Application::handleInput()
 	}
 }
 
-void Application::ImGuiPerformanceBox(std::chrono::high_resolution_clock::time_point &previousTime)
+void Application::ImGuiPerformanceBox()
 {
 	std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> frameDuration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(currentTime - previousTime);
