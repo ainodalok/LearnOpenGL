@@ -9,6 +9,8 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/matrix_operation.hpp>
 #include <vector>
+#include <array>
+#include <map>
 
 class Renderer
 {
@@ -79,19 +81,36 @@ private:
         -5.0f, 0.0f, -5.0f,  0.0f, 2.0f,
          5.0f, 0.0f, -5.0f,  2.0f, 2.0f
     };
+    float transparentVertices[30] = {
+        // positions         //texture Coords
+        0.0f,  0.5f,  0.0f,  0.0f,  1.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
 
+        0.0f,  0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  1.0f
+    };
+    std::array<glm::vec3, 5> vegetation = 
+    { 
+        glm::vec3(-1.5f,  0.0f, -0.48f),
+        glm::vec3(1.5f,  0.0f,  0.51f),
+        glm::vec3(0.0f,  0.0f,  0.7f),
+        glm::vec3(-0.3f,  0.0f, -2.3f),
+        glm::vec3(0.5f,  0.0f, -0.6f)
+    };
 
 	std::vector<GLuint> VAOs;
 	GLuint VBO;
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
     std::vector<GLuint> UBOs;
-    ObjectUBO objectUBOs[3];
+    ObjectUBO objectUBOs[8];
     unsigned long long objectUBOOffset;
 	Model* model;
     glm::mat4 PV;
 
-	void loadTexture(const std::string &texturePath);
+	void loadTexture(const std::string &texturePath, GLint wrapMode);
 };
 
 #endif
