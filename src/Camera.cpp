@@ -37,14 +37,16 @@ const glm::mat4& Camera::getP() const
 {
 	return P;
 }
-
+#include "UI.h"
 float Camera::getYaw()
 {
 	//Avoid singularity with w = 0.0
-	glm::quat noPitch = glm::rotate(orientation, -getPitch(), glm::normalize(orientation * initialRight));
-	if (noPitch.w == 0)
+	const glm::quat noPitch = orientation * glm::angleAxis(-getPitch(), initialRight);
+
+	//Avoid singularity with w = 0.0
+	if (orientation.w == 0)
 		return glm::half_pi<float>();
-	return glm::atan(noPitch.y / noPitch.w);
+	return 2 * glm::atan(noPitch.y / noPitch.w);
 }
 
 float Camera::getPitch()

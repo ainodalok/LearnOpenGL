@@ -27,6 +27,13 @@ private:
         glm::mat4 PVM;
     }ObjectUBO;
 
+    typedef struct FloorUBO
+    {
+        glm::mat4 PVM;
+        glm::vec3 pos;
+    }FloorUBO;
+
+
     float cubeVertices[180] = {
             // Back face
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
@@ -74,13 +81,13 @@ private:
     float planeVertices[30] = 
     {
         //positions           //texture Coords
-         5.0f, 0.0f,  5.0f,  2.0f, 0.0f,
-        -5.0f, 0.0f, -5.0f,  0.0f, 2.0f,
-        -5.0f, 0.0f,  5.0f,  0.0f, 0.0f,
-
-         5.0f, 0.0f,  5.0f,  2.0f, 0.0f,
-         5.0f, 0.0f, -5.0f,  2.0f, 2.0f,
-        -5.0f, 0.0f, -5.0f,  0.0f, 2.0f
+         10.0f, 0.0f,  10.0f,  10.0f, 0.0f,
+        -10.0f, 0.0f, -10.0f,  0.0f, 10.0f,
+        -10.0f, 0.0f,  10.0f,  0.0f, 0.0f,
+                      
+         10.0f, 0.0f,  10.0f,  10.0f, 0.0f,
+         10.0f, 0.0f, -10.0f,  10.0f, 10.0f,
+        -10.0f, 0.0f, -10.0f,  0.0f, 10.0f
     };
     float transparentVertices[30] = {
         // positions         //texture Coords
@@ -104,14 +111,15 @@ private:
     GLuint FBO = 0;
     GLuint FBOtexture = 0;
     GLuint RBO = 0;
+
 	std::vector<GLuint> VAOs;
 	GLuint VBO;
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
     std::vector<GLuint> UBOs;
     ObjectUBO objectUBOs[8];
-    unsigned long long objectUBOOffset;
-	Model* model;
+    FloorUBO floorUBO;
+
     glm::mat4 PV;
 
 	void loadTexture(const std::string &texturePath, GLint wrapMode);

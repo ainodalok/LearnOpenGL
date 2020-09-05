@@ -3,9 +3,10 @@
 Renderer::Renderer(int width, int height)
 {
 	//VAO
-	VAOs.push_back(0);
-	glGenVertexArrays(1, &VAOs[0]);
-	glBindVertexArray(VAOs[0]);
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+	VAOs.push_back(VAO);
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices) + sizeof(planeVertices) + sizeof(transparentVertices), nullptr, GL_STATIC_DRAW);
@@ -18,28 +19,35 @@ Renderer::Renderer(int width, int height)
 	glEnableVertexAttribArray(1);
 
 	loadTexture("textures/marble.jpg", GL_REPEAT);
-	loadTexture("textures/metal.png", GL_REPEAT);
+	loadTexture("textures/wall.jpg", GL_REPEAT);
 	loadTexture("textures/blending_transparent_window.png", GL_CLAMP_TO_EDGE);
+
+	GLuint UBO;
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(FloorUBO), nullptr, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
 
 	for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
 	{
-		UBOs.push_back(0);
-		glGenBuffers(1, &UBOs[i]);
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i]);
+		glGenBuffers(1, &UBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 		glBufferData(GL_UNIFORM_BUFFER, sizeof(ObjectUBO), nullptr, GL_STATIC_DRAW);
+		UBOs.push_back(UBO);
 	}
 
 	//Object program
-	programs.push_back(0);
-	programs[0] = new Shader("shaders/object.vert", "null", "shaders/object.frag");
-	programs.push_back(0);
-	programs[1] = new Shader("shaders/screen.vert", "null", "shaders/screen.frag");
+	programs.push_back(new Shader("shaders/object.vert", "null", "shaders/object.frag"));
+	programs.push_back(new Shader("shaders/screen.vert", "null", "shaders/screen.frag"));
+	programs.push_back(new Shader("shaders/floor.vert", "null", "shaders/object.frag"));
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
 }
 
 Renderer::~Renderer()
 {
+	for (int i = 0; i < UBOs.size(); i++)
+		glDeleteBuffers(1, &UBOs[i]);
 	for (int i = 0; i < programs.size(); i++)
 		delete programs[i];
 	for (int i = 0; i < VAOs.size(); i++)
@@ -110,9 +118,10 @@ void Renderer::render(Camera& camera, bool wireframe)
 		objectUBOs[0].PVM = PV * M;
 		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
 		objectUBOs[1].PVM = PV * M;
-		M = glm::translate(glm::vec3(0.0f, -0.5f, 0.0f));
-		M = glm::scale(M, glm::vec3(3.0f, 3.0f, 3.0f));
-		objectUBOs[2].PVM = PV * M;
+		M = glm::translate(glm::vec3(camera.pos.x, -0.5f, camera.pos.z));
+		//M = glm::scale(M, glm::vec3(3.0f, 3.0f, 3.0f));
+		floorUBO.PVM = PV * M;
+		floorUBO.pos = camera.pos;
 		std::map<float, glm::vec3> sortedWindows;
 		for (unsigned int i = 0; i < vegetation.size(); i++)
 		{
@@ -123,31 +132,33 @@ void Renderer::render(Camera& camera, bool wireframe)
 		for (std::map<float, glm::vec3>::reverse_iterator it = sortedWindows.rbegin(); it != sortedWindows.rend(); it++, i++)
 		{
 			M = glm::translate(it->second);
-			objectUBOs[i + 3].PVM = PV * M;
+			objectUBOs[i + 2].PVM = PV * M;
 		}
-		for (unsigned int i = 0; i < UBOs.size(); i++)
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FloorUBO), &floorUBO);
+		for (unsigned int i = 1; i < UBOs.size(); i++)
 		{
 			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i]);
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i]);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i - 1]);
 		}
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	programs[0]->use();
+	
+	programs[2]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(FloorUBO));
 	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
 
+	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(ObjectUBO));
-	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
-
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(ObjectUBO));
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 
-	
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
+
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
 	for (unsigned int i = 0; i < vegetation.size(); i++)
 	{
