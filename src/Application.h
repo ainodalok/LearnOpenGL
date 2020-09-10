@@ -26,11 +26,6 @@ public:
 	void executeLoop();
 
 private:
-	const ImGuiWindowFlags overlayBox =	ImGuiWindowFlags_NoDecoration |
-										ImGuiWindowFlags_AlwaysAutoResize |
-										ImGuiWindowFlags_NoFocusOnAppearing |
-										ImGuiWindowFlags_NoNav;
-
 	GLFWwindow* window;
 	UI* ui;
 	Renderer* renderer;

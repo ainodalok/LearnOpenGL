@@ -194,9 +194,7 @@ void Application::executeLoop()
 		input->frameFinished();
 
 		ImGuiPerformanceBox();
-
-		ImGui::Render();
-
+		
 		draw();
 	}
 }
@@ -205,7 +203,8 @@ void Application::draw()
 {	
 	camera->updateV();
 	renderer->render(*camera, false);
-
+	
+	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
 }

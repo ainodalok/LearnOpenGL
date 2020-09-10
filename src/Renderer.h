@@ -4,10 +4,12 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
+#include "UI.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/matrix_operation.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <vector>
 #include <array>
 #include <map>
@@ -37,6 +39,14 @@ private:
     {
         glm::mat4 PV;
     }SkyboxUBO;
+
+	typedef struct ReflectUBO
+    {
+        glm::mat4 PVM;
+        glm::mat4 M;
+        glm::mat4 transposedInvertedM;
+        glm::vec3 camera;
+    }ReflectUBO;
 
     float cubeVertices[180] = {
         //positions             //texture Coords
@@ -82,6 +92,51 @@ private:
          0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f  // bottom-left  
+    };
+    float cubeReflectVertices[216] = {
+		//positions             //normals
+		// Back face
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // Bottom-left
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // top-right
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // bottom-right         
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // top-right
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // bottom-left
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // top-left
+        // Front face
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, // bottom-left
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, // bottom-right
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, // top-right
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, // top-right
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, // top-left
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, // bottom-left
+        // Left face                       
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, // top-right
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, // top-left
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, // bottom-left
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, // bottom-left
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, // bottom-right
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, // top-right
+        // Right face
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, // top-left
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, // bottom-right
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, // top-right         
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, // bottom-right
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, // top-left
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, // bottom-left     
+        // Bottom face
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, // top-right
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, // top-left
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, // bottom-left
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, // bottom-left
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, // bottom-right
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, // top-right
+        // Top face
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, // top-right     
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, // bottom-right
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, // top-left
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f  // bottom-left  
     };
     float planeVertices[30] = 
     {
@@ -175,9 +230,10 @@ private:
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
     std::vector<GLuint> UBOs;
-    ObjectUBO objectUBOs[8];
+    ObjectUBO objectUBOs[7];
     FloorUBO floorUBO;
     SkyboxUBO skyboxUBO;
+    ReflectUBO reflectUBO;
 
     glm::mat4 PV;
 

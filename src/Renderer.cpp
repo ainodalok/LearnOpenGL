@@ -31,6 +31,19 @@ Renderer::Renderer(int width, int height)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	glGenVertexArrays(1, &VAO);
+	VAOs.push_back(VAO);
+	glBindVertexArray(VAO);
+	glGenBuffers(1, &VBO);
+	VBOs.push_back(VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeReflectVertices), nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeReflectVertices), cubeReflectVertices);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 	
 	//Textures
 	load2DTexture("textures/marble.jpg", GL_REPEAT);
@@ -50,6 +63,11 @@ Renderer::Renderer(int width, int height)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(SkyboxUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(ReflectUBO), nullptr, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
+
 	for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
 	{
 		glGenBuffers(1, &UBO);
@@ -63,6 +81,7 @@ Renderer::Renderer(int width, int height)
 	programs.push_back(new Shader("shaders/screen.vert", "null", "shaders/screen.frag"));
 	programs.push_back(new Shader("shaders/floor.vert", "null", "shaders/object.frag"));
 	programs.push_back(new Shader("shaders/skybox.vert", "null", "shaders/skybox.frag"));
+	programs.push_back(new Shader("shaders/reflect.vert", "null", "shaders/reflect.frag"));
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
@@ -178,11 +197,9 @@ void Renderer::render(Camera &camera, bool wireframe)
 		//Skybox
 		skyboxUBO.PV = camera.getP() * glm::mat4(glm::mat3(camera.getV()));
 		
-		//Cubes (objects)
+		//Cube (object)
 		M = glm::translate(glm::vec3(-1.0f, 0.0f, -1.0f));
 		objectUBOs[0].PVM = PV * M;
-		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
-		objectUBOs[1].PVM = PV * M;
 		
 		//Windows (objects)
 		//Sort by distance from camera
@@ -193,36 +210,44 @@ void Renderer::render(Camera &camera, bool wireframe)
 			sortedWindows[distance] = windows[i];
 		}
 		//and construct UBOs for each of them
-		int i = 2;
+		int i = 1;
 		for (std::map<float, glm::vec3>::reverse_iterator it = sortedWindows.rbegin(); it != sortedWindows.rend(); it++, i++)
 		{
 			M = glm::translate(it->second);
 			objectUBOs[i].PVM = PV * M;
 		}
 
+		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
+		reflectUBO.PVM = PV * M;
+		reflectUBO.M = M;
+		reflectUBO.transposedInvertedM = glm::transpose(glm::inverse(reflectUBO.M));
+		reflectUBO.camera = camera.pos;
+
 		//Send UBO data to GPU
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FloorUBO), &floorUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SkyboxUBO), &skyboxUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ReflectUBO), &reflectUBO);
 		for (unsigned int i = 0; i < sizeof(objectUBOs) / sizeof(ObjectUBO); i++)
 		{
-			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i + 2]);
+			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i + 3]);
 			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i]);
 		}
 	}
 
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGui::Begin("Internals", (bool*)0, overlayBox);
+	ImGui::Text("%f, %f, %f camera pos", camera.pos.x, camera.pos.y, camera.pos.z);
+	ImGui::Text("TIM - %s", glm::to_string(reflectUBO.transposedInvertedM).c_str());
+	ImGui::Text("M - %s", glm::to_string(reflectUBO.M).c_str());
+	ImGui::Text("PVM - %s", glm::to_string(reflectUBO.PVM).c_str());
+	ImGui::End();
+
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	//Render skybox
-	glBindVertexArray(VAOs[0]);
-	glDepthMask(GL_FALSE);
-	programs[3]->use();
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[3]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(SkyboxUBO));
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glDepthMask(GL_TRUE);
 
 	glBindVertexArray(VAOs[1]);
 	
@@ -232,23 +257,37 @@ void Renderer::render(Camera &camera, bool wireframe)
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(FloorUBO));
 	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
 
-	//Render cubes
+	//Render cube
 	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
-	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
-
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[3], 0, sizeof(ObjectUBO));
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 
+	//Render reflective cube
+	glBindVertexArray(VAOs[2]);
+	programs[4]->use();
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[3]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ReflectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeReflectVertices) / sizeof(float) / 6);
+	
+	//Render skybox
+	glBindVertexArray(VAOs[0]);
+	glDepthFunc(GL_LEQUAL);
+	programs[3]->use();
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(SkyboxUBO));
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDepthFunc(GL_LESS);
+	
+	glBindVertexArray(VAOs[1]);
 	//Render each window
+	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
 	for (unsigned int i = 0; i < windows.size(); i++)
 	{
 		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[i + 4], 0, sizeof(ObjectUBO));
 		glDrawArrays(GL_TRIANGLES, (sizeof(cubeVertices) + sizeof(planeVertices)) / (sizeof(float) * 5), sizeof(transparentVertices) / (sizeof(float) * 5));
 	}
-
+	
 	//Blit to the screen
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);

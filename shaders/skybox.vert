@@ -14,5 +14,5 @@ uniform mat4 view;
 void main()
 {
     fragTextureUV = position;
-    gl_Position = PV * vec4(position, 1.0);
+    gl_Position = (PV * vec4(position, 1.0)).xyww;
 }
