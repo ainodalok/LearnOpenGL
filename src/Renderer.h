@@ -33,9 +33,14 @@ private:
         glm::vec3 pos;
     }FloorUBO;
 
+    typedef struct SkyboxUBO
+    {
+        glm::mat4 PV;
+    }SkyboxUBO;
 
     float cubeVertices[180] = {
-            // Back face
+        //positions             //texture Coords
+    	// Back face
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
          0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
          0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right         
@@ -99,7 +104,7 @@ private:
         1.0f, -0.5f,  0.0f,  1.0f,  0.0f,
         1.0f,  0.5f,  0.0f,  1.0f,  1.0f
     };
-    std::array<glm::vec3, 5> vegetation = 
+    std::array<glm::vec3, 5> windows = 
     { 
         glm::vec3(-1.5f,  0.0f, -0.48f),
         glm::vec3(1.5f,  0.0f,  0.51f),
@@ -107,22 +112,77 @@ private:
         glm::vec3(-0.3f,  0.0f, -2.3f),
         glm::vec3(0.5f,  0.0f, -0.6f)
     };
+    float skyboxVertices[108] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+    std::vector<std::string> texturePaths =
+    {
+			"textures/skybox/right.jpg",
+            "textures/skybox/left.jpg",
+            "textures/skybox/top.jpg",
+            "textures/skybox/bottom.jpg",
+            "textures/skybox/front.jpg",
+            "textures/skybox/back.jpg"
+    };
 
     GLuint FBO = 0;
     GLuint FBOtexture = 0;
     GLuint RBO = 0;
 
 	std::vector<GLuint> VAOs;
-	GLuint VBO;
+    std::vector<GLuint> VBOs;
 	std::vector<GLuint> textures;
 	std::vector<Shader*> programs;
     std::vector<GLuint> UBOs;
     ObjectUBO objectUBOs[8];
     FloorUBO floorUBO;
+    SkyboxUBO skyboxUBO;
 
     glm::mat4 PV;
 
-	void loadTexture(const std::string &texturePath, GLint wrapMode);
+	void load2DTexture(const std::string &texturePath, GLint wrapMode);
+    void loadCubeMap(const std::vector<std::string> &texturePath);
 };
 
 #endif

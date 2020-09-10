@@ -2,12 +2,26 @@
 
 Renderer::Renderer(int width, int height)
 {
-	//VAO
+	//Meshes
 	GLuint VAO;
+	GLuint VBO;
+	
 	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
 	VAOs.push_back(VAO);
+	glBindVertexArray(VAO);
 	glGenBuffers(1, &VBO);
+	VBOs.push_back(VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(skyboxVertices), skyboxVertices);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(0 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	
+	glGenVertexArrays(1, &VAO);
+	VAOs.push_back(VAO);
+	glBindVertexArray(VAO);
+	glGenBuffers(1, &VBO);
+	VBOs.push_back(VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices) + sizeof(planeVertices) + sizeof(transparentVertices), nullptr, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertices), cubeVertices);
@@ -17,15 +31,23 @@ Renderer::Renderer(int width, int height)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+	
+	//Textures
+	load2DTexture("textures/marble.jpg", GL_REPEAT);
+	load2DTexture("textures/wall.jpg", GL_REPEAT);
+	load2DTexture("textures/blending_transparent_window.png", GL_CLAMP_TO_EDGE);
+	loadCubeMap(texturePaths);
 
-	loadTexture("textures/marble.jpg", GL_REPEAT);
-	loadTexture("textures/wall.jpg", GL_REPEAT);
-	loadTexture("textures/blending_transparent_window.png", GL_CLAMP_TO_EDGE);
-
+	//UBOs
 	GLuint UBO;
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(FloorUBO), nullptr, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
+
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(SkyboxUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
 	for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
@@ -36,10 +58,12 @@ Renderer::Renderer(int width, int height)
 		UBOs.push_back(UBO);
 	}
 
-	//Object program
+	//Shaders
 	programs.push_back(new Shader("shaders/object.vert", "null", "shaders/object.frag"));
 	programs.push_back(new Shader("shaders/screen.vert", "null", "shaders/screen.frag"));
 	programs.push_back(new Shader("shaders/floor.vert", "null", "shaders/object.frag"));
+	programs.push_back(new Shader("shaders/skybox.vert", "null", "shaders/skybox.frag"));
+
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
 }
@@ -52,7 +76,8 @@ Renderer::~Renderer()
 		delete programs[i];
 	for (int i = 0; i < VAOs.size(); i++)
 		glDeleteVertexArrays(1, &VAOs[i]);
-	glDeleteBuffers(1, &VBO);
+	for (int i = 0; i < VBOs.size(); i++)
+		glDeleteBuffers(1, &VBOs[i]);
 	for (int i = 0; i < textures.size(); i++)
 		glDeleteTextures(1, &textures[i]);
 	glDeleteRenderbuffers(1, &RBO);
@@ -60,7 +85,7 @@ Renderer::~Renderer()
 	glDeleteFramebuffers(1, &FBO);
 }
 
-void Renderer::loadTexture(const std::string &texturePath, GLint wrapMode)
+void Renderer::load2DTexture(const std::string &texturePath, GLint wrapMode)
 {
 	int width, height, nrChannels;
 	GLubyte* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
@@ -105,7 +130,35 @@ void Renderer::loadTexture(const std::string &texturePath, GLint wrapMode)
 	textures.push_back(texture);
 }
 
-void Renderer::render(Camera& camera, bool wireframe)
+void Renderer::loadCubeMap(const std::vector<std::string> &texturePaths)
+{
+	//Cubemap's texture origin is inverted
+	stbi_set_flip_vertically_on_load(false);
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+	int width, height, nrChannels;
+	unsigned char* data;
+	for (unsigned int i = 0; i < texturePaths.size(); i++)
+	{
+		data = stbi_load(texturePaths[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		else
+			std::cout << "Cubemap tex failed to load at path: " << texturePaths[i] << std::endl;
+		stbi_image_free(data);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//Clamp to edge so that when sampling exactly between two faces there would always be edge data
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	textures.push_back(texture);
+	stbi_set_flip_vertically_on_load(true);
+}
+
+void Renderer::render(Camera &camera, bool wireframe)
 {
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -113,59 +166,90 @@ void Renderer::render(Camera& camera, bool wireframe)
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
 		PV = camera.getP() * camera.getV();
+
+		//Construct UBOs
 		glm::mat4 M;
-		M = glm::translate(glm::vec3(-1.0f, 0.0f, -1.0f));
-		objectUBOs[0].PVM = PV * M;
-		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
-		objectUBOs[1].PVM = PV * M;
+		//Floor
 		M = glm::translate(glm::vec3(camera.pos.x, -0.5f, camera.pos.z));
 		//M = glm::scale(M, glm::vec3(3.0f, 3.0f, 3.0f));
 		floorUBO.PVM = PV * M;
 		floorUBO.pos = camera.pos;
+
+		//Skybox
+		skyboxUBO.PV = camera.getP() * glm::mat4(glm::mat3(camera.getV()));
+		
+		//Cubes (objects)
+		M = glm::translate(glm::vec3(-1.0f, 0.0f, -1.0f));
+		objectUBOs[0].PVM = PV * M;
+		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
+		objectUBOs[1].PVM = PV * M;
+		
+		//Windows (objects)
+		//Sort by distance from camera
 		std::map<float, glm::vec3> sortedWindows;
-		for (unsigned int i = 0; i < vegetation.size(); i++)
+		for (unsigned int i = 0; i < windows.size(); i++)
 		{
-			float distance = glm::length(camera.pos - vegetation[i]);
-			sortedWindows[distance] = vegetation[i];
+			float distance = glm::length(camera.pos - windows[i]);
+			sortedWindows[distance] = windows[i];
 		}
-		int i = 0;
+		//and construct UBOs for each of them
+		int i = 2;
 		for (std::map<float, glm::vec3>::reverse_iterator it = sortedWindows.rbegin(); it != sortedWindows.rend(); it++, i++)
 		{
 			M = glm::translate(it->second);
-			objectUBOs[i + 2].PVM = PV * M;
+			objectUBOs[i].PVM = PV * M;
 		}
+
+		//Send UBO data to GPU
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FloorUBO), &floorUBO);
-		for (unsigned int i = 1; i < UBOs.size(); i++)
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SkyboxUBO), &skyboxUBO);
+		for (unsigned int i = 0; i < sizeof(objectUBOs) / sizeof(ObjectUBO); i++)
 		{
-			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i]);
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i - 1]);
+			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i + 2]);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i]);
 		}
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+	//Render skybox
+	glBindVertexArray(VAOs[0]);
+	glDepthMask(GL_FALSE);
+	programs[3]->use();
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[3]);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(SkyboxUBO));
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDepthMask(GL_TRUE);
+
+	glBindVertexArray(VAOs[1]);
 	
+	//Render floor
 	programs[2]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(FloorUBO));
 	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
 
+	//Render cubes
 	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(ObjectUBO));
-	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
-
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ObjectUBO));
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
 
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[3], 0, sizeof(ObjectUBO));
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
+
+	//Render each window
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
-	for (unsigned int i = 0; i < vegetation.size(); i++)
+	for (unsigned int i = 0; i < windows.size(); i++)
 	{
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[i + 3], 0, sizeof(ObjectUBO));
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[i + 4], 0, sizeof(ObjectUBO));
 		glDrawArrays(GL_TRIANGLES, (sizeof(cubeVertices) + sizeof(planeVertices)) / (sizeof(float) * 5), sizeof(transparentVertices) / (sizeof(float) * 5));
 	}
 
+	//Blit to the screen
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 	programs[1]->use();
