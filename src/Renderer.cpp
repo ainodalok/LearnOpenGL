@@ -220,10 +220,11 @@ void Renderer::render(Camera &camera, bool wireframe)
 			objectUBOs[i].PVM = PV * M;
 		}
 
-		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
+		M = glm::scale(glm::vec3(0.1f, 0.1f, 0.1f));
+		M = glm::translate(M, glm::vec3(2.0f, -5.0f, 0.0f));
 		refractUBO.PVM = PV * M;
 		refractUBO.M = M;
-		refractUBO.transposedInvertedM = glm::transpose(glm::inverse(refractUBO.M));
+		refractUBO.cofactorM = glm::transpose(glm::adjugate(refractUBO.M));
 		refractUBO.camera = camera.pos;
 
 		//Send UBO data to GPU
@@ -243,7 +244,7 @@ void Renderer::render(Camera &camera, bool wireframe)
 	ImGui::SetNextWindowBgAlpha(0.35f);
 	ImGui::Begin("Internals", (bool*)0, overlayBox);
 	ImGui::Text("%f, %f, %f camera pos", camera.pos.x, camera.pos.y, camera.pos.z);
-	ImGui::Text("TIM - %s", glm::to_string(refractUBO.transposedInvertedM).c_str());
+	ImGui::Text("TIM - %s", glm::to_string(refractUBO.cofactorM).c_str());
 	ImGui::Text("M - %s", glm::to_string(refractUBO.M).c_str());
 	ImGui::Text("PVM - %s", glm::to_string(refractUBO.PVM).c_str());
 	ImGui::End();

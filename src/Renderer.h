@@ -44,7 +44,7 @@ private:
     {
         glm::mat4 PVM;
         glm::mat4 M;
-        glm::mat4 transposedInvertedM;
+        glm::mat4 cofactorM;
         glm::vec3 camera;
     }ReflectUBO;
 

@@ -7,7 +7,7 @@ layout (std140, binding = 0) uniform ObjectBlock
 {
 	mat4 PVM;
 	mat4 M;
-	mat4 transposedInvertedM;
+	mat4 cofactorM;
 	vec3 camera;
 };
 

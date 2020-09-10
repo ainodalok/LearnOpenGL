@@ -7,7 +7,7 @@ layout (std140, binding = 0) uniform ObjectBlock
 {
 	mat4 PVM;
 	mat4 M;
-	mat4 transposedInvertedM;
+	mat4 cofactorM;
 	vec3 camera;
 };
 
@@ -17,6 +17,6 @@ layout (location = 1) out vec3 fragNormalModel;
 void main()
 {
 	gl_Position = PVM * vec4(position, 1.0f);
-	fragNormalModel = mat3(transposedInvertedM) * normal;
+	fragNormalModel = mat3(cofactorM) * normal;
 	fragPostionModel = vec3(M * vec4(position, 1.0));
 }
