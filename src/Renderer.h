@@ -40,7 +40,7 @@ private:
         glm::mat4 PV;
     }SkyboxUBO;
 
-	typedef struct ReflectUBO
+	typedef struct RefractUBO
     {
         glm::mat4 PVM;
         glm::mat4 M;
@@ -93,7 +93,7 @@ private:
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f  // bottom-left  
     };
-    float cubeReflectVertices[216] = {
+    float cubeRefractVertices[216] = {
 		//positions             //normals
 		// Back face
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, // Bottom-left
@@ -233,7 +233,9 @@ private:
     ObjectUBO objectUBOs[7];
     FloorUBO floorUBO;
     SkyboxUBO skyboxUBO;
-    ReflectUBO reflectUBO;
+    RefractUBO refractUBO;
+
+    Model* nanosuit;
 
     glm::mat4 PV;
 

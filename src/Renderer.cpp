@@ -38,8 +38,8 @@ Renderer::Renderer(int width, int height)
 	glGenBuffers(1, &VBO);
 	VBOs.push_back(VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeReflectVertices), nullptr, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeReflectVertices), cubeReflectVertices);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeRefractVertices), nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeRefractVertices), cubeRefractVertices);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -81,8 +81,10 @@ Renderer::Renderer(int width, int height)
 	programs.push_back(new Shader("shaders/screen.vert", "null", "shaders/screen.frag"));
 	programs.push_back(new Shader("shaders/floor.vert", "null", "shaders/object.frag"));
 	programs.push_back(new Shader("shaders/skybox.vert", "null", "shaders/skybox.frag"));
-	programs.push_back(new Shader("shaders/reflect.vert", "null", "shaders/reflect.frag"));
+	programs.push_back(new Shader("shaders/refract.vert", "null", "shaders/refract.frag"));
 
+	nanosuit = new Model("models/nanosuit/nanosuit.obj");
+	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
 }
@@ -102,6 +104,7 @@ Renderer::~Renderer()
 	glDeleteRenderbuffers(1, &RBO);
 	glDeleteTextures(1, &FBOtexture);
 	glDeleteFramebuffers(1, &FBO);
+	delete nanosuit;
 }
 
 void Renderer::load2DTexture(const std::string &texturePath, GLint wrapMode)
@@ -218,10 +221,10 @@ void Renderer::render(Camera &camera, bool wireframe)
 		}
 
 		M = glm::translate(glm::vec3(2.0f, 0.0f, 0.0f));
-		reflectUBO.PVM = PV * M;
-		reflectUBO.M = M;
-		reflectUBO.transposedInvertedM = glm::transpose(glm::inverse(reflectUBO.M));
-		reflectUBO.camera = camera.pos;
+		refractUBO.PVM = PV * M;
+		refractUBO.M = M;
+		refractUBO.transposedInvertedM = glm::transpose(glm::inverse(refractUBO.M));
+		refractUBO.camera = camera.pos;
 
 		//Send UBO data to GPU
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
@@ -229,7 +232,7 @@ void Renderer::render(Camera &camera, bool wireframe)
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SkyboxUBO), &skyboxUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ReflectUBO), &reflectUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ReflectUBO), &refractUBO);
 		for (unsigned int i = 0; i < sizeof(objectUBOs) / sizeof(ObjectUBO); i++)
 		{
 			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i + 3]);
@@ -240,9 +243,9 @@ void Renderer::render(Camera &camera, bool wireframe)
 	ImGui::SetNextWindowBgAlpha(0.35f);
 	ImGui::Begin("Internals", (bool*)0, overlayBox);
 	ImGui::Text("%f, %f, %f camera pos", camera.pos.x, camera.pos.y, camera.pos.z);
-	ImGui::Text("TIM - %s", glm::to_string(reflectUBO.transposedInvertedM).c_str());
-	ImGui::Text("M - %s", glm::to_string(reflectUBO.M).c_str());
-	ImGui::Text("PVM - %s", glm::to_string(reflectUBO.PVM).c_str());
+	ImGui::Text("TIM - %s", glm::to_string(refractUBO.transposedInvertedM).c_str());
+	ImGui::Text("M - %s", glm::to_string(refractUBO.M).c_str());
+	ImGui::Text("PVM - %s", glm::to_string(refractUBO.PVM).c_str());
 	ImGui::End();
 
 	
@@ -268,7 +271,8 @@ void Renderer::render(Camera &camera, bool wireframe)
 	programs[4]->use();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[3]);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ReflectUBO));
-	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeReflectVertices) / sizeof(float) / 6);
+	nanosuit->draw(*programs[4], true);
+	//glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeRefractVertices) / sizeof(float) / 6);
 	
 	//Render skybox
 	glBindVertexArray(VAOs[0]);

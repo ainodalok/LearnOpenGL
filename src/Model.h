@@ -18,7 +18,7 @@ class Model
 public:
 	Model(const std::string& path);
 
-	void draw(const Shader &shader);
+	void draw(const Shader &shader, bool noTex);
 	
 private:
 	void loadModel(const std::string &path);

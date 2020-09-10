@@ -9,10 +9,10 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int> 
     setupMesh();
 }
 
-void Mesh::draw(const Shader &shader)
+void Mesh::draw(const Shader &shader, bool noTex)
 {
     unsigned int textureNr = 0;
-    for (unsigned int i = 0; i < textures.size(); i++)
+    for (unsigned int i = 0; i < textures.size() && !noTex; i++)
     {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);

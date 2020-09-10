@@ -5,10 +5,10 @@ Model::Model(const std::string& path)
 	loadModel(path);
 }
 
-void Model::draw(const Shader &shader)
+void Model::draw(const Shader &shader, bool noTex)
 {
 	for (unsigned int i = 0; i < meshes.size(); i++)
-		meshes[i].draw(shader);
+		meshes[i].draw(shader, noTex);
 }
 
 void Model::loadModel(const std::string& path)

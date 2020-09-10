@@ -32,7 +32,7 @@ public:
 
 	Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> indices, const std::vector<Texture> &textures);
 
-	void draw(const Shader &shader);
+	void draw(const Shader &shader, bool noTex);
 
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;

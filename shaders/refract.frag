@@ -17,7 +17,9 @@ layout (location = 0) out vec4 fragColor;
 
 void main()
 {
+	//Diamond refractive index
+	float ratio = 1.0 / 2.42;
 	vec3 incoming = normalize(fragPostionModel - camera);
-	vec3 reflected = reflect(incoming, normalize(fragNormalModel));
-	fragColor = vec4(texture(tex, reflected).rgb, 1.0);
+	vec3 refracted = refract(incoming, normalize(fragNormalModel), ratio);
+	fragColor = vec4(texture(tex, normalize(refracted)).rgb, 1.0);
 }
