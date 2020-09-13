@@ -44,6 +44,17 @@ Renderer::Renderer(int width, int height)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	glGenVertexArrays(1, &VAO);
+	VAOs.push_back(VAO);
+	glBindVertexArray(VAO);
+	glGenBuffers(1, &VBO);
+	VBOs.push_back(VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(points), points);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(0 * sizeof(float)));
+	glEnableVertexAttribArray(0);
 	
 	//Textures
 	load2DTexture("textures/marble.jpg", GL_REPEAT);
@@ -82,7 +93,8 @@ Renderer::Renderer(int width, int height)
 	programs.push_back(new Shader("shaders/floor.vert", "null", "shaders/object.frag"));
 	programs.push_back(new Shader("shaders/skybox.vert", "null", "shaders/skybox.frag"));
 	programs.push_back(new Shader("shaders/refract.vert", "null", "shaders/refract.frag"));
-
+	programs.push_back(new Shader("shaders/geometry.vert", "shaders/geometry.geom", "shaders/geometry.frag"));
+	
 	nanosuit = new Model("models/nanosuit/nanosuit.obj");
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -259,13 +271,13 @@ void Renderer::render(Camera &camera, bool wireframe)
 	programs[2]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[0], 0, sizeof(FloorUBO));
-	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / sizeof(float) / 5);
+	glDrawArrays(GL_TRIANGLES, sizeof(cubeVertices) / sizeof(float) / 5, sizeof(planeVertices) / (sizeof(float) * 5));
 
 	//Render cube
 	programs[0]->use();
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[3], 0, sizeof(ObjectUBO));
-	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / sizeof(float) / 5);
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / (sizeof(float) * 5));
 
 	//Render reflective cube
 	glBindVertexArray(VAOs[2]);
@@ -292,6 +304,10 @@ void Renderer::render(Camera &camera, bool wireframe)
 		glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[i + 4], 0, sizeof(ObjectUBO));
 		glDrawArrays(GL_TRIANGLES, (sizeof(cubeVertices) + sizeof(planeVertices)) / (sizeof(float) * 5), sizeof(transparentVertices) / (sizeof(float) * 5));
 	}
+
+	glBindVertexArray(VAOs[3]);
+	programs[5]->use();
+	glDrawArrays(GL_POINTS, 0, sizeof(points) / (sizeof(float) * 2));
 	
 	//Blit to the screen
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
