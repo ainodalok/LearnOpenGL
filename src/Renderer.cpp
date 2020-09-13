@@ -292,7 +292,7 @@ void Renderer::render(Camera &camera, bool wireframe)
 	glDepthFunc(GL_LEQUAL);
 	programs[3]->use();
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[1], 0, sizeof(SkyboxUBO));
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDrawArrays(GL_TRIANGLES, 0, sizeof(skyboxVertices) / (sizeof(float) * 3));
 	glDepthFunc(GL_LESS);
 	
 	glBindVertexArray(VAOs[1]);
