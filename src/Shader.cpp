@@ -6,7 +6,7 @@ Shader::Shader(const std::string& combinedShaderPath)
 	std::string vertexShaderCode = "#define VERTEX\n" + shaderCode;
 	std::string geometryShaderCode = "null";
 	if (shaderCode.find("#ifdef GEOMETRY") != std::string::npos)
-		std::string geometryShaderCode = "#define GEOMETRY\n" + shaderCode;
+		geometryShaderCode = "#define GEOMETRY\n" + shaderCode;
 	std::string fragmentShaderCode = "#define FRAGMENT\n" + shaderCode;
 
 	ID = buildProgramFromShaderCode(vertexShaderCode, geometryShaderCode, fragmentShaderCode);
@@ -17,7 +17,7 @@ Shader::Shader(const std::string& vertexShaderPath, const std::string& geometryS
 	std::string vertexShaderCode = getStringFromFile(vertexShaderPath);
 	std::string geometryShaderCode = "null";
 	if (geometryShaderPath != "null")
-		std::string geometryShaderCode = getStringFromFile(geometryShaderPath);
+		geometryShaderCode = getStringFromFile(geometryShaderPath);
 	std::string fragmentShaderCode = getStringFromFile(fragmentShaderPath);
 
 	ID = buildProgramFromShaderCode(vertexShaderCode, geometryShaderCode, fragmentShaderCode);
@@ -45,7 +45,7 @@ std::string Shader::getStringFromFile(const std::string& path)
 		file.close();
 		return stream.str();
 	}
-	catch (std::ifstream::failure e)
+	catch (std::ifstream::failure &e)
 	{
 		std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
 		exit(1);
@@ -109,7 +109,7 @@ void Shader::checkCompilerErrors(GLuint id, const char* type)
 {
 	int success;
 	char infoLog[1024];
-	if (std::strcmp(type, "PROGRAM"))
+	if (std::strcmp(type, "PROGRAM") != 0 )
 	{
 		glGetShaderiv(id, GL_COMPILE_STATUS, &success);
 		if (!success)

@@ -99,6 +99,8 @@ Renderer::Renderer(int width, int height)
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
+
+	glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
 Renderer::~Renderer()
