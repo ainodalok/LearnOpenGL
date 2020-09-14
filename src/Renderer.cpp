@@ -53,8 +53,10 @@ Renderer::Renderer(int width, int height)
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), nullptr, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(points), points);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(0 * sizeof(float)));
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(0 * sizeof(float)));
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 	
 	//Textures
 	load2DTexture("textures/marble.jpg", GL_REPEAT);
@@ -309,7 +311,7 @@ void Renderer::render(Camera &camera, bool wireframe)
 
 	glBindVertexArray(VAOs[3]);
 	programs[5]->use();
-	glDrawArrays(GL_POINTS, 0, sizeof(points) / (sizeof(float) * 2));
+	glDrawArrays(GL_POINTS, 0, sizeof(points) / (sizeof(float) * 5));
 	
 	//Blit to the screen
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
