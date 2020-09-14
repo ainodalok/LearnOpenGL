@@ -78,7 +78,7 @@ Renderer::Renderer(int width, int height)
 
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(ReflectUBO), nullptr, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(RefractUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
 	for (unsigned int i = 0; i < (sizeof(objectUBOs) / sizeof(ObjectUBO)); i++)
@@ -96,6 +96,7 @@ Renderer::Renderer(int width, int height)
 	programs.push_back(new Shader("shaders/skybox.vert", "null", "shaders/skybox.frag"));
 	programs.push_back(new Shader("shaders/refract.vert", "null", "shaders/refract.frag"));
 	programs.push_back(new Shader("shaders/geometry.vert", "shaders/geometry.geom", "shaders/geometry.frag"));
+	programs.push_back(new Shader("shaders/explode.vert", "shaders/explode.geom", "shaders/explode.frag"));
 	
 	nanosuit = new Model("models/nanosuit/nanosuit.obj");
 	
@@ -238,10 +239,11 @@ void Renderer::render(Camera &camera, bool wireframe)
 
 		M = glm::scale(glm::vec3(0.1f, 0.1f, 0.1f));
 		M = glm::translate(M, glm::vec3(2.0f, -5.0f, 0.0f));
-		refractUBO.PVM = PV * M;
+		refractUBO.PV = PV;
 		refractUBO.M = M;
 		refractUBO.cofactorM = glm::transpose(glm::adjugate(refractUBO.M));
 		refractUBO.camera = camera.pos;
+		refractUBO.time = 0.0f;
 
 		//Send UBO data to GPU
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
@@ -249,20 +251,22 @@ void Renderer::render(Camera &camera, bool wireframe)
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SkyboxUBO), &skyboxUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ReflectUBO), &refractUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RefractUBO), &refractUBO);
 		for (unsigned int i = 0; i < sizeof(objectUBOs) / sizeof(ObjectUBO); i++)
 		{
-			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i + 3]);
+			glBindBuffer(GL_UNIFORM_BUFFER, UBOs[i + UBOs.size() - sizeof(objectUBOs) / sizeof(ObjectUBO)]);
 			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ObjectUBO), &objectUBOs[i]);
 		}
 	}
+
+	
 
 	ImGui::SetNextWindowBgAlpha(0.35f);
 	ImGui::Begin("Internals", (bool*)0, overlayBox);
 	ImGui::Text("%f, %f, %f camera pos", camera.pos.x, camera.pos.y, camera.pos.z);
 	ImGui::Text("TIM - %s", glm::to_string(refractUBO.cofactorM).c_str());
 	ImGui::Text("M - %s", glm::to_string(refractUBO.M).c_str());
-	ImGui::Text("PVM - %s", glm::to_string(refractUBO.PVM).c_str());
+	ImGui::Text("PV - %s", glm::to_string(refractUBO.PV).c_str());
 	ImGui::End();
 
 	
@@ -283,11 +287,15 @@ void Renderer::render(Camera &camera, bool wireframe)
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[3], 0, sizeof(ObjectUBO));
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeVertices) / (sizeof(float) * 5));
 
-	//Render reflective cube
+	//Render nanosuit cube
 	glBindVertexArray(VAOs[2]);
-	programs[4]->use();
+	programs[6]->use();
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textures[3]);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(ReflectUBO));
+	//Update time
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+	float glfwTime = static_cast<float>(glfwGetTime());
+	glBufferSubData(GL_UNIFORM_BUFFER, offsetof(RefractUBO, time), sizeof(float), &glfwTime);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBOs[2], 0, sizeof(RefractUBO));
 	nanosuit->draw(*programs[4], true);
 	//glDrawArrays(GL_TRIANGLES, 0, sizeof(cubeRefractVertices) / sizeof(float) / 6);
 	

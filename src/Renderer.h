@@ -42,11 +42,12 @@ private:
 
 	typedef struct RefractUBO
     {
-        glm::mat4 PVM;
-        glm::mat4 M;
-        glm::mat4 cofactorM;
-        glm::vec3 camera;
-    }ReflectUBO;
+        alignas(16)glm::mat4 PV;
+        alignas(16)glm::mat4 M;
+        alignas(16)glm::mat4 cofactorM;
+        alignas(16)glm::vec3 camera;
+        float time;
+    }RefractUBO;
 
     float cubeVertices[180] = {
         //positions             //texture Coords
