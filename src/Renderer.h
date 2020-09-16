@@ -10,6 +10,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/matrix_operation.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/random.hpp>
 #include <vector>
 #include <array>
 #include <map>
@@ -24,21 +25,27 @@ public:
     void rebuildFramebuffer(int width, int height);
 
 private:
-    typedef struct ObjectUBO
+    typedef struct PVMUBO
     {
         glm::mat4 PVM;
-    }ObjectUBO;
+    }PVMUBO;
 
-    typedef struct FloorUBO
+    typedef struct PVMposUBO
     {
         glm::mat4 PVM;
         glm::vec3 pos;
-    }FloorUBO;
+    }PVMposUBO;
 
-    typedef struct SkyboxUBO
+    typedef struct PVUBO
     {
         glm::mat4 PV;
-    }SkyboxUBO;
+    }PVUBO;
+
+    typedef struct PVMrotUBO
+    {
+        glm::mat4 PVM;
+        glm::mat4 rot;
+    }PVMrotUBO;
 
 	typedef struct RefractUBO
     {
@@ -235,14 +242,19 @@ private:
 	std::vector<GLuint> VAOs;
     std::vector<GLuint> VBOs;
 	std::vector<GLuint> textures;
-	std::vector<Shader*> programs;
+	std::vector<Shader> programs;
     std::vector<GLuint> UBOs;
-    ObjectUBO objectUBOs[7];
-    FloorUBO floorUBO;
-    SkyboxUBO skyboxUBO;
+    std::vector<PVMUBO> objectUBOs;
+    PVMposUBO floorUBO;
+    PVUBO skyboxUBO;
+    PVMrotUBO asteroidUBO;
     RefractUBO refractUBO;
 
-    Model* nanosuit;
+    std::vector<Model> models;
+
+    unsigned int amount = 10000;
+    glm::mat4* asteroidMatrices;
+    glm::vec3* randAsteroidRotationVec;
 
     glm::mat4 PV;
 

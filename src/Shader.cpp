@@ -23,12 +23,28 @@ Shader::Shader(const std::string& vertexShaderPath, const std::string& geometryS
 	ID = buildProgramFromShaderCode(vertexShaderCode, geometryShaderCode, fragmentShaderCode);
 }
 
+Shader::Shader(Shader&& shader) noexcept
+{
+	*this = std::move(shader);
+}
+
+Shader& Shader::operator=(Shader&& shader) noexcept
+{
+	if (this != &shader)
+	{
+		ID = shader.ID;
+		shader.ID = 0;
+	}
+
+	return *this;
+}
+
 Shader::~Shader()
 {
 	glDeleteProgram(ID);
 }
 
-void Shader::use()
+void Shader::use() const
 {
 	glUseProgram(ID);
 }

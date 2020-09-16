@@ -7,6 +7,7 @@ Model::Model(const std::string& path)
 
 void Model::draw(const Shader &shader, bool noTex)
 {
+	shader.use();
 	for (unsigned int i = 0; i < meshes.size(); i++)
 		meshes[i].draw(shader, noTex);
 }

@@ -19,6 +19,8 @@ public:
 	Model(const std::string& path);
 
 	void draw(const Shader &shader, bool noTex);
+	std::vector<Mesh> meshes;
+	std::vector<Mesh::Texture> texturesLoaded;
 	
 private:
 	void loadModel(const std::string &path);
@@ -27,7 +29,5 @@ private:
 	std::vector<Mesh::Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, Mesh::TexType texType);
 	GLuint textureFromFile(const std::string &path, const std::string &directory, bool gamma = false);
 
-	std::vector<Mesh> meshes;
-	std::vector<Mesh::Texture> texturesLoaded;
 	std::string directory;
 };

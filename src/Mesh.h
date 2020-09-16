@@ -30,7 +30,7 @@ public:
 		std::string path;
 	}Texture;
 
-	Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> indices, const std::vector<Texture> &textures);
+	Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, const std::vector<Texture> &textures);
 
 	void draw(const Shader &shader, bool noTex);
 
@@ -38,10 +38,12 @@ public:
 	std::vector<unsigned int> indices;
 	std::vector<Texture> textures;
 
-private:
+
 	GLuint VAO;
 	GLuint VBO;
 	GLuint EBO;
+
+private:
 
 	void setupMesh();
 };
