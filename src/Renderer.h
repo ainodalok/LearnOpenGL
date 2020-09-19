@@ -237,6 +237,8 @@ private:
 
     GLuint FBO = 0;
     GLuint FBOtexture = 0;
+    int width = 0;
+    int height = 0;
     GLuint RBO = 0;
 
 	std::vector<GLuint> VAOs;
