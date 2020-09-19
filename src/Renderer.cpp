@@ -2,7 +2,7 @@
 
 Renderer::Renderer(int width, int height)
 {
-	//Meshes
+	//Static data construction and transfer
 	GLuint VAO;
 	GLuint VBO;
 
@@ -107,10 +107,9 @@ void Renderer::render(Camera &camera, bool wireframe)
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+	//Update matrices and UBOs here
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
-		PV = camera.getP() * camera.getV();
-
 		
 	}
 
@@ -118,6 +117,7 @@ void Renderer::render(Camera &camera, bool wireframe)
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+	//Render data on GPU
 	
 	
 	//Blit to the screen
