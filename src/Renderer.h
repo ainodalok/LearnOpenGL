@@ -25,6 +25,17 @@ public:
     void rebuildFramebuffer(int width, int height);
 
 private:
+    typedef struct PVUBO
+	{
+		glm::mat4 PV;
+	}PVUBO;
+	
+	typedef struct LightUBO
+	{
+		glm::vec4 lightPos;
+		glm::vec4 viewPos;
+	}LightUBO;
+	
     GLuint FBO = 0;
     GLuint FBOtexture = 0;
     int width = 0;
@@ -37,7 +48,10 @@ private:
 	std::vector<Shader> programs;
     std::vector<GLuint> UBOs;
 
-	void load2DTexture(const std::string &texturePath, GLint wrapMode);
+	PVUBO floorUBO;
+	LightUBO lightUBO;
+
+	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);
 };
 

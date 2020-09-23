@@ -5,8 +5,46 @@ Renderer::Renderer(int width, int height)
 	//Static data construction and transfer
 	GLuint VAO;
 	GLuint VBO;
+	GLuint UBO;
 
+	float planeVertices[] = {
+		// positions            // normals         // texcoords
+		 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+		-10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+
+		 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+		 10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f
+	};
+
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+	VAOs.push_back(VAO);
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	VBOs.push_back(VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), nullptr, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
+
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUBO), nullptr, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
 	
+	load2DTexture("textures/wood.png", GL_REPEAT, true);
+
+	programs.emplace_back("shaders/litFloor.vert", "null", "shaders/litFloor.frag");
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
@@ -29,7 +67,7 @@ Renderer::~Renderer()
 	glDeleteFramebuffers(1, &FBO);
 }
 
-void Renderer::load2DTexture(const std::string &texturePath, GLint wrapMode)
+void Renderer::load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb)
 {
 	int width, height, nrChannels;
 	GLubyte* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
@@ -40,21 +78,27 @@ void Renderer::load2DTexture(const std::string &texturePath, GLint wrapMode)
 		return;
 	}
 	GLenum format;
+	GLenum intFormat;
 	switch (nrChannels)
 	{
 	case 1:
+		intFormat = GL_RED;
 		format = GL_RED;
 		break;
 	case 2:
+		intFormat = GL_RG;
 		format = GL_RG;
 		break;
 	case 3:
+		intFormat = srgb ? GL_SRGB : GL_RGB;
 		format = GL_RGB;
 		break;
 	case 4:
+		intFormat = srgb ? GL_SRGB_ALPHA : GL_RGBA;
 		format = GL_RGBA;
 		break;
 	default:
+		intFormat = GL_RGB;
 		format = GL_RGB;
 		break;
 	}
@@ -68,7 +112,7 @@ void Renderer::load2DTexture(const std::string &texturePath, GLint wrapMode)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, aniso);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, intFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	stbi_image_free(data);
 	textures.push_back(texture);
@@ -110,15 +154,26 @@ void Renderer::render(Camera &camera, bool wireframe)
 	//Update matrices and UBOs here
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
-		
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
+		floorUBO.PV = camera.getP() * camera.getV();
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PVUBO), &floorUBO);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+		lightUBO.lightPos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUBO), &lightUBO);
 	}
 
-	
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	//Render data on GPU
-	
+	glBindVertexArray(VAOs[0]);
+	programs[0].use();
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[0]);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[1]);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	
 	//Blit to the screen
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
