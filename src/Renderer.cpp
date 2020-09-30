@@ -9,13 +9,58 @@ Renderer::Renderer(int width, int height)
 
 	float planeVertices[] = {
 		// positions            // normals         // texcoords
-		 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-		-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
-		-10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
 
-		 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-		 10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f,
-		-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f
+	};
+
+	float cubeVertices[] = {
+		// back face
+		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+		 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+		-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+		// front face
+		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+		 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+		-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+		// left face
+		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+		-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+		-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+		// right face
+		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+		 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+		 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+		// bottom face
+		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+		 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+		-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+		// top face
+		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+		 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+		 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+		 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+		-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
 	};
 
 	glGenVertexArrays(1, &VAO);
@@ -24,7 +69,9 @@ Renderer::Renderer(int width, int height)
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	VBOs.push_back(VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices) + sizeof(cubeVertices), nullptr, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(planeVertices), planeVertices);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(planeVertices), sizeof(cubeVertices), cubeVertices);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
@@ -32,23 +79,65 @@ Renderer::Renderer(int width, int height)
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
+	//Camera
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
-
+	
+	//Point light
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
+
+	//Directional light shadow map
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	float near_plane = 1.0f, far_plane = 7.5f;
+	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+	glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+									glm::vec3(0.0f, 0.0f, 0.0f),
+										glm::vec3(0.0f, 1.0f, 0.0f));
+	directShadowUBO.PV = lightProjection * lightView;
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), &directShadowUBO, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
+
+	//Floor
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	floorUBO.M = glm::identity<glm::mat4>();
+	floorUBO.cofactorM = floorUBO.M;
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(ObjectBlock), &floorUBO, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
+	
+	//3 Cubes
+	cubeUBOs[0].M = glm::translate(glm::vec3(0.0f, 1.5f, 0.0)) * 
+					glm::scale(glm::vec3(0.5f));
+	cubeUBOs[1].M = glm::translate(glm::vec3(2.0f, 0.0f, 1.0)) * 
+					glm::scale(glm::vec3(0.5f));
+	cubeUBOs[2].M = glm::translate(glm::vec3(-1.0f, 0.0f, 2.0)) *
+					glm::rotate(glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0))) * 
+					glm::scale(glm::vec3(0.25f));
+	for (int i = 0; i < sizeof(cubeUBOs) / sizeof(ObjectBlock); i++)
+	{
+		glGenBuffers(1, &UBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+		cubeUBOs[i].cofactorM = glm::transpose(glm::adjugate(glm::mat3(cubeUBOs[i].M)));
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(ObjectBlock), &cubeUBOs[i], GL_STATIC_DRAW);
+		UBOs.push_back(UBO);
+	}
 	
 	load2DTexture("textures/wood.png", GL_REPEAT, true);
 
-	programs.emplace_back("shaders/litFloor.vert", "null", "shaders/litFloor.frag");
+	programs.emplace_back("shaders/litShadowObj.vert", "null", "shaders/litShadowObj.frag");
+	programs.emplace_back("shaders/depth.vert", "null", "shaders/depth.frag");
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
 
+	buildDepthMapFramebuffer(depthMapFBO, depthMapTexture);
+	
 	glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
@@ -62,6 +151,8 @@ Renderer::~Renderer()
 		glDeleteBuffers(1, &VBOs[i]);
 	for (int i = 0; i < textures.size(); i++)
 		glDeleteTextures(1, &textures[i]);
+	glDeleteTextures(1, &depthMapTexture);
+	glDeleteFramebuffers(1, &depthMapFBO);
 	glDeleteRenderbuffers(1, &RBO);
 	glDeleteTextures(1, &FBOtexture);
 	glDeleteFramebuffers(1, &FBO);
@@ -146,34 +237,94 @@ void Renderer::loadCubeMap(const std::vector<std::string> &texturePaths)
 	stbi_set_flip_vertically_on_load(true);
 }
 
+void Renderer::buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture)
+{
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glGenTextures(1, &depthMapTexture);
+	glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTexture, 0);
+	//Since no color attachments
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+}
+
+void Renderer::updateUniforms(Camera& camera)
+{
+	//Update matrices and UBOs here
+	if (camera.wasUpdatedP || camera.wasUpdatedV)
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
+		cameraUBO.PV = camera.getP() * camera.getV();
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PVUBO), &cameraUBO);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+		lightUBO.lightPos = glm::vec4(-2.0f, 4.0f, -1.0f, 1.0f);
+		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUBO), &lightUBO);
+	}
+}
+
+void Renderer::renderScene(bool shadow)
+{
+	//UBOs - cameraUBO, lightUBO, directShadowUBO, floorUBO, cubeUBOs[3]
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[2]);
+
+	if (shadow)
+	{
+		programs[1].use();
+		//glCullFace(GL_FRONT);
+	}
+	
+	//Render data on GPU
+	if (!shadow)
+	{
+		glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[0]);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 3, UBOs[1]);
+		programs[0].use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures[0]);
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+	}
+	glBindVertexArray(VAOs[0]);
+	//Floor
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[3]);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	
+	//Cubes
+	for (int i = 0; i < sizeof(cubeUBOs) / sizeof(ObjectBlock); i++)
+	{
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[4 + i]);
+		glDrawArrays(GL_TRIANGLES, 6, 36);
+	}
+
+	//if (shadow) glCullFace(GL_BACK);
+}
+
 void Renderer::render(Camera &camera, bool wireframe)
 {
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	//Update matrices and UBOs here
-	if (camera.wasUpdatedP || camera.wasUpdatedV)
-	{
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
-		floorUBO.PV = camera.getP() * camera.getV();
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PVUBO), &floorUBO);
+	updateUniforms(camera);
 
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
-		lightUBO.lightPos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUBO), &lightUBO);
-	}
-
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	renderScene(true);
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glViewport(0, 0, this->width, this->height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	//Render data on GPU
-	glBindVertexArray(VAOs[0]);
-	programs[0].use();
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[0]);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[1]);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	renderScene(false);
 	
 	//Blit to the screen
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);

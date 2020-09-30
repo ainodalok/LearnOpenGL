@@ -29,12 +29,23 @@ private:
 	{
 		glm::mat4 PV;
 	}PVUBO;
+
+	typedef struct ObjectBlock
+	{
+		glm::mat4 M;
+		glm::mat4 cofactorM; //transpose(adjugate)
+	}ObjectBlock;
 	
 	typedef struct LightUBO
 	{
 		glm::vec4 lightPos;
 		glm::vec4 viewPos;
 	}LightUBO;
+
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+	GLuint depthMapFBO = 0;
+	GLuint depthMapTexture = 0;
 	
     GLuint FBO = 0;
     GLuint FBOtexture = 0;
@@ -48,11 +59,17 @@ private:
 	std::vector<Shader> programs;
     std::vector<GLuint> UBOs;
 
-	PVUBO floorUBO;
+	PVUBO cameraUBO;
+	ObjectBlock floorUBO;
+	ObjectBlock cubeUBOs[3];
 	LightUBO lightUBO;
+	PVUBO directShadowUBO;
 
 	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);
+	void buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture);
+	void renderScene(bool shadow);
+	void updateUniforms(Camera& camera);
 };
 
 #endif

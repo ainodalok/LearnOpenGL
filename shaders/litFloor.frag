@@ -34,7 +34,7 @@ void main()
 	vec3 specular = vec3(0.3) * spec;
 
 	float dist = length(lightPos.xyz - fs_in.position);
-	dist = min(1.5, dist);
+	//dist = min(1.5, dist);
 	float attenuation = 1.0 / (dist * dist);
 
 	fragColor = vec4((ambient + diffuse + specular) * attenuation, 1.0);
