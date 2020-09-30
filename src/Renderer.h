@@ -30,6 +30,11 @@ private:
 		glm::mat4 PV;
 	}PVUBO;
 
+	typedef struct OmniShadowUBO
+	{
+		glm::mat4 shadowPV[6];
+	}OmniShadowUBO;
+
 	typedef struct ObjectBlock
 	{
 		glm::mat4 M;
@@ -38,8 +43,9 @@ private:
 	
 	typedef struct LightUBO
 	{
-		glm::vec4 lightPos;
 		glm::vec4 viewPos;
+		glm::vec3 lightPos;
+		float farPlane;
 	}LightUBO;
 
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -63,7 +69,10 @@ private:
 	ObjectBlock floorUBO;
 	ObjectBlock cubeUBOs[3];
 	LightUBO lightUBO;
-	PVUBO directShadowUBO;
+	OmniShadowUBO omniShadowUBO;
+
+	glm::vec3 lightPos = glm::vec3(-2.0f, 4.0f, -1.0f);
+	float shadowFarPlane = 25.0f;
 
 	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);

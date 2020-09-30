@@ -91,16 +91,20 @@ Renderer::Renderer(int width, int height)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
-	//Directional light shadow map
+	//Omni-Directional light shadow map
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	float near_plane = 1.0f, far_plane = 7.5f;
-	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-	glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-									glm::vec3(0.0f, 0.0f, 0.0f),
-										glm::vec3(0.0f, 1.0f, 0.0f));
-	directShadowUBO.PV = lightProjection * lightView;
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), &directShadowUBO, GL_STATIC_DRAW);
+	float nearPlane = 1.0f;
+	float aspect = static_cast<float>(SHADOW_WIDTH) / static_cast<float>(SHADOW_HEIGHT);
+	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, nearPlane, shadowFarPlane);
+	std::vector<glm::mat4> shadowTransforms;
+	omniShadowUBO.shadowPV[0] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+	omniShadowUBO.shadowPV[1] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+	omniShadowUBO.shadowPV[2] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+	omniShadowUBO.shadowPV[3] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
+	omniShadowUBO.shadowPV[4] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
+	omniShadowUBO.shadowPV[5] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(OmniShadowUBO), &omniShadowUBO, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
 	//Floor
@@ -130,8 +134,8 @@ Renderer::Renderer(int width, int height)
 	
 	load2DTexture("textures/wood.png", GL_REPEAT, true);
 
-	programs.emplace_back("shaders/litShadowObj.vert", "null", "shaders/litShadowObj.frag");
-	programs.emplace_back("shaders/depth.vert", "null", "shaders/depth.frag");
+	programs.emplace_back("shaders/litOmniShadowObj.vert", "null", "shaders/litOmniShadowObj.frag");
+	programs.emplace_back("shaders/omniDepth.vert", "shaders/omniDepth.geom", "shaders/omniDepth.frag");
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
@@ -242,15 +246,22 @@ void Renderer::buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture)
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glGenTextures(1, &depthMapTexture);
-	glBindTexture(GL_TEXTURE_2D, depthMapTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTexture, 0);
+	//glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depthMapTexture);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	for (unsigned int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	//float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthMapTexture, 0);
 	//Since no color attachments
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
@@ -266,19 +277,20 @@ void Renderer::updateUniforms(Camera& camera)
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PVUBO), &cameraUBO);
 
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
-		lightUBO.lightPos = glm::vec4(-2.0f, 4.0f, -1.0f, 1.0f);
+		lightUBO.lightPos = lightPos;
 		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
+		lightUBO.farPlane = shadowFarPlane;
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUBO), &lightUBO);
 	}
 }
 
 void Renderer::renderScene(bool shadow)
 {
-	//UBOs - cameraUBO, lightUBO, directShadowUBO, floorUBO, cubeUBOs[3]
-	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[2]);
-
+	//UBOs - cameraUBO, lightUBO, omniDirectShadowUBO, floorUBO, cubeUBOs[3]
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[1]); // lightUBO
 	if (shadow)
 	{
+		glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[2]); // omniDirectShadowUBO
 		programs[1].use();
 		//glCullFace(GL_FRONT);
 	}
@@ -286,23 +298,22 @@ void Renderer::renderScene(bool shadow)
 	//Render data on GPU
 	if (!shadow)
 	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[0]);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 3, UBOs[1]);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[0]); // cameraUBO
 		programs[0].use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textures[0]);
 		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, depthMapTexture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depthMapTexture);
 	}
 	glBindVertexArray(VAOs[0]);
 	//Floor
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[3]);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[3]); // floorUBO
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	
 	//Cubes
 	for (int i = 0; i < sizeof(cubeUBOs) / sizeof(ObjectBlock); i++)
 	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[4 + i]);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[4 + i]); // cubeUBOs
 		glDrawArrays(GL_TRIANGLES, 6, 36);
 	}
 
