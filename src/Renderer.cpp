@@ -7,140 +7,92 @@ Renderer::Renderer(int width, int height)
 	GLuint VBO;
 	GLuint UBO;
 
-	float planeVertices[] = {
-		// positions            // normals         // texcoords
-		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-
-         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f,
-        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f
-	};
-
-	float cubeVertices[] = {
-		// back face
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-		// front face
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		// left face
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		// right face
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
-		// bottom face
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		// top face
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
-		 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
-	};
-
 	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
 	VAOs.push_back(VAO);
+	glBindVertexArray(VAO);
 	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	VBOs.push_back(VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices) + sizeof(cubeVertices), nullptr, GL_STATIC_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(planeVertices), planeVertices);
-	glBufferSubData(GL_ARRAY_BUFFER, sizeof(planeVertices), sizeof(cubeVertices), cubeVertices);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// positions
+	glm::vec3 pos1(-1.0, 1.0, 0.0);
+	glm::vec3 pos2(-1.0, -1.0, 0.0);
+	glm::vec3 pos3(1.0, -1.0, 0.0);
+	glm::vec3 pos4(1.0, 1.0, 0.0);
+	// texture coordinates
+	glm::vec2 uv1(0.0, 1.0);
+	glm::vec2 uv2(0.0, 0.0);
+	glm::vec2 uv3(1.0, 0.0);
+	glm::vec2 uv4(1.0, 1.0);
+	// normal vector
+	glm::vec3 nm(0.0, 0.0, 1.0);
+	
+	glm::vec3 edge1 = pos2 - pos1;
+	glm::vec3 edge2 = pos3 - pos1;
+	glm::vec2 deltaUV1 = uv2 - uv1;
+	glm::vec2 deltaUV2 = uv3 - uv1;
+	float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+	glm::mat2 inverseUVs(deltaUV2.y, -deltaUV2.x, -deltaUV1.y, deltaUV1.x);
+	glm::mat3x2 edges;
+	edges = glm::row(edges, 0, edge1);
+	edges = glm::row(edges, 1, edge2);
+	glm::mat3x2 TB1 = f * inverseUVs * edges;
+	glm::vec3 tangent1 = glm::row(TB1, 0);
+	glm::vec3 bitangent1 = glm::row(TB1, 1);
+	
+	edge1 = pos4 - pos1;
+	deltaUV1 = uv4 - uv1;
+	f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+	inverseUVs = glm::mat2(deltaUV2.y, -deltaUV2.x, -deltaUV1.y, deltaUV1.x);
+	edges = glm::row(edges, 0, edge1);
+	glm::mat3x2 TB2 = f * inverseUVs * edges;
+	glm::vec3 tangent2 = glm::row(TB2, 0);
+	glm::vec3 bitangent2 = glm::row(TB2, 1);
 
-	//Camera
+	float planeVertices[] =
+	{ pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+	  pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+	  pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+	  pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+	  pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+	  pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z };
+	
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+
+	//cameraUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
-	
-	//Point light
+
+	//lightUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
-
-	//Omni-Directional light shadow map
+	
+	//planeUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	float nearPlane = 1.0f;
-	float aspect = static_cast<float>(SHADOW_WIDTH) / static_cast<float>(SHADOW_HEIGHT);
-	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, nearPlane, shadowFarPlane);
-	std::vector<glm::mat4> shadowTransforms;
-	omniShadowUBO.shadowPV[0] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-	omniShadowUBO.shadowPV[1] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-	omniShadowUBO.shadowPV[2] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-	omniShadowUBO.shadowPV[3] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
-	omniShadowUBO.shadowPV[4] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
-	omniShadowUBO.shadowPV[5] = shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(OmniShadowUBO), &omniShadowUBO, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
-	//Floor
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	floorUBO.M = glm::identity<glm::mat4>();
-	floorUBO.cofactorM = floorUBO.M;
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(ObjectBlock), &floorUBO, GL_STATIC_DRAW);
-	UBOs.push_back(UBO);
-	
-	//3 Cubes
-	cubeUBOs[0].M = glm::translate(glm::vec3(0.0f, 1.5f, 0.0)) * 
-					glm::scale(glm::vec3(0.5f));
-	cubeUBOs[1].M = glm::translate(glm::vec3(2.0f, 0.0f, 1.0)) * 
-					glm::scale(glm::vec3(0.5f));
-	cubeUBOs[2].M = glm::translate(glm::vec3(-1.0f, 0.0f, 2.0)) *
-					glm::rotate(glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0))) * 
-					glm::scale(glm::vec3(0.25f));
-	for (int i = 0; i < sizeof(cubeUBOs) / sizeof(ObjectBlock); i++)
-	{
-		glGenBuffers(1, &UBO);
-		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-		cubeUBOs[i].cofactorM = glm::transpose(glm::adjugate(glm::mat3(cubeUBOs[i].M)));
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(ObjectBlock), &cubeUBOs[i], GL_STATIC_DRAW);
-		UBOs.push_back(UBO);
-	}
-	
-	load2DTexture("textures/wood.png", GL_REPEAT, true);
+	load2DTexture("textures/brickwall.jpg", GL_REPEAT, true);
+	load2DTexture("textures/brickwall_normal.jpg", GL_REPEAT, false);
 
-	programs.emplace_back("shaders/litOmniShadowObj.vert", "null", "shaders/litOmniShadowObj.frag");
-	programs.emplace_back("shaders/omniDepth.vert", "shaders/omniDepth.geom", "shaders/omniDepth.frag");
+	programs.emplace_back("shaders/litNormalMap.vert", "null", "shaders/litNormalMap.frag");
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
-
-	buildDepthMapFramebuffer(depthMapFBO, depthMapTexture);
 	
 	glEnable(GL_PROGRAM_POINT_SIZE);
 }
@@ -155,8 +107,6 @@ Renderer::~Renderer()
 		glDeleteBuffers(1, &VBOs[i]);
 	for (int i = 0; i < textures.size(); i++)
 		glDeleteTextures(1, &textures[i]);
-	glDeleteTextures(1, &depthMapTexture);
-	glDeleteFramebuffers(1, &depthMapFBO);
 	glDeleteRenderbuffers(1, &RBO);
 	glDeleteTextures(1, &FBOtexture);
 	glDeleteFramebuffers(1, &FBO);
@@ -269,55 +219,39 @@ void Renderer::buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture)
 
 void Renderer::updateUniforms(Camera& camera)
 {
+	//UBOs - cameraUBO, lightUBO, planeUBO
 	//Update matrices and UBOs here
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
 		cameraUBO.PV = camera.getP() * camera.getV();
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PVUBO), &cameraUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(cameraUBO), &cameraUBO);
 
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
-		lightUBO.lightPos = lightPos;
+		lightUBO.lightPos = glm::vec3(0.5f, 0.0f, 0.4f);
 		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
-		lightUBO.farPlane = shadowFarPlane;
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightUBO), &lightUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightUBO), &lightUBO);
 	}
+
+	planeUBO.M = glm::mat4(1.0f);
+	planeUBO.M = glm::rotate(planeUBO.M, (float)glfwGetTime() * -1.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+	planeUBO.cofactorM = glm::transpose(glm::adjugate(planeUBO.M));
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(planeUBO), &planeUBO);
 }
 
-void Renderer::renderScene(bool shadow)
+void Renderer::renderScene()
 {
-	//UBOs - cameraUBO, lightUBO, omniDirectShadowUBO, floorUBO, cubeUBOs[3]
-	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[1]); // lightUBO
-	if (shadow)
-	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[2]); // omniDirectShadowUBO
-		programs[1].use();
-		//glCullFace(GL_FRONT);
-	}
-	
-	//Render data on GPU
-	if (!shadow)
-	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[0]); // cameraUBO
-		programs[0].use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textures[0]);
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, depthMapTexture);
-	}
 	glBindVertexArray(VAOs[0]);
-	//Floor
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[3]); // floorUBO
+	programs[0].use();
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[2]);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[0]);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[1]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	
-	//Cubes
-	for (int i = 0; i < sizeof(cubeUBOs) / sizeof(ObjectBlock); i++)
-	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[4 + i]); // cubeUBOs
-		glDrawArrays(GL_TRIANGLES, 6, 36);
-	}
-
-	//if (shadow) glCullFace(GL_BACK);
 }
 
 void Renderer::render(Camera &camera, bool wireframe)
@@ -326,16 +260,11 @@ void Renderer::render(Camera &camera, bool wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	updateUniforms(camera);
-
-	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	renderScene(true);
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glViewport(0, 0, this->width, this->height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	renderScene(false);
+	renderScene();
 	
 	//Blit to the screen
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);

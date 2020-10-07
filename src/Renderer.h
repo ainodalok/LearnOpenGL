@@ -11,6 +11,7 @@
 #include <glm/gtx/matrix_operation.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/random.hpp>
+#include <glm/gtc/matrix_access.hpp>
 #include <vector>
 #include <array>
 #include <map>
@@ -25,28 +26,23 @@ public:
     void rebuildFramebuffer(int width, int height);
 
 private:
-    typedef struct PVUBO
-	{
-		glm::mat4 PV;
-	}PVUBO;
 
-	typedef struct OmniShadowUBO
-	{
-		glm::mat4 shadowPV[6];
-	}OmniShadowUBO;
-
-	typedef struct ObjectBlock
+	typedef struct MUBO
 	{
 		glm::mat4 M;
-		glm::mat4 cofactorM; //transpose(adjugate)
-	}ObjectBlock;
-	
+		glm::mat4 cofactorM;
+	} MUBO;
+
+	typedef struct PVUBO
+	{
+		glm::mat4 PV;
+	} PV;
+
 	typedef struct LightUBO
 	{
 		glm::vec4 viewPos;
 		glm::vec3 lightPos;
-		float farPlane;
-	}LightUBO;
+	} LightUBO;
 
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
@@ -65,19 +61,14 @@ private:
 	std::vector<Shader> programs;
     std::vector<GLuint> UBOs;
 
+	MUBO planeUBO;
 	PVUBO cameraUBO;
-	ObjectBlock floorUBO;
-	ObjectBlock cubeUBOs[3];
 	LightUBO lightUBO;
-	OmniShadowUBO omniShadowUBO;
-
-	glm::vec3 lightPos = glm::vec3(-2.0f, 4.0f, -1.0f);
-	float shadowFarPlane = 25.0f;
 
 	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);
 	void buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture);
-	void renderScene(bool shadow);
+	void renderScene();
 	void updateUniforms(Camera& camera);
 };
 
