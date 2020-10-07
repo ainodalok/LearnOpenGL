@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "Model.h"
 
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int> &indices, const std::vector<Texture>& textures)
 {
@@ -9,13 +10,35 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int> 
     setupMesh();
 }
 
-void Mesh::draw(const Shader &shader, bool noTex)
+void Mesh::draw(bool noTex, GLuint materialUBOId)
 {
-    unsigned int textureNr = 0;
-    for (unsigned int i = 0; i < textures.size() && !noTex; i++)
+    if (!noTex)
     {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        Model::MaterialUBO materialUBO = { 0, 0, 0, 0 };
+        for (unsigned int i = 0; i < textures.size(); i++)
+        {
+            switch (textures[i].type)
+            {
+            case DIFFUSE:
+                materialUBO.diffuseUsed = 1;
+                break;
+            case SPECULAR:
+                materialUBO.specularUsed = 1;
+                break;
+            case NORMAL:
+                materialUBO.normalMapUsed = 1;
+                break;
+            case HEIGHT:
+                materialUBO.heightMapUsed = 1;
+                break;
+            }
+            // Supports only one texture per type
+            // DIFFUSE, SPECULAR, NORMAL, HEIGHT
+            glActiveTexture(GL_TEXTURE0 + textures[i].type);
+            glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, materialUBOId);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(materialUBO), &materialUBO);
     }
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

@@ -1,11 +1,10 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#endif
-
 #include "Shader.h"
 #include "Mesh.h"
 
+#include <vector>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -16,13 +15,23 @@
 class Model
 {
 public:
+	typedef struct MaterialUBO
+	{
+		int diffuseUsed;
+		int specularUsed;
+		int normalMapUsed;
+		int heightMapUsed;
+	}MaterialUBO;
+	
 	Model(const std::string& path);
 
-	void draw(const Shader &shader, bool noTex);
+	void draw(bool noTex, uint32_t materialUBOBindingPoint);
 	std::vector<Mesh> meshes;
 	std::vector<Mesh::Texture> texturesLoaded;
 	
 private:
+	GLuint materialUBOId;
+	
 	void loadModel(const std::string &path);
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
@@ -31,3 +40,5 @@ private:
 
 	std::string directory;
 };
+
+#endif

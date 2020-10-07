@@ -1,6 +1,8 @@
 #ifndef MESH_H
 #define MESH_H
 
+class Model;
+
 #include "Shader.h"
 
 #include <glm/glm.hpp>
@@ -36,7 +38,7 @@ public:
 
 	Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, const std::vector<Texture> &textures);
 
-	void draw(const Shader &shader, bool noTex);
+	void draw(bool noTex, GLuint materialUBOId);
 
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;

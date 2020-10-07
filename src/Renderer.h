@@ -60,8 +60,9 @@ private:
 	std::vector<GLuint> textures;
 	std::vector<Shader> programs;
     std::vector<GLuint> UBOs;
+	std::vector<Model> models;
 
-	MUBO planeUBO;
+	MUBO modelUBO;
 	PVUBO cameraUBO;
 	LightUBO lightUBO;
 

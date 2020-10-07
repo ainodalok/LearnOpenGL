@@ -2,20 +2,25 @@
 
 Model::Model(const std::string& path)
 {
+	glGenBuffers(1, &materialUBOId);
+	glBindBuffer(GL_UNIFORM_BUFFER, materialUBOId);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(MaterialUBO), nullptr, GL_STATIC_DRAW);
+	
 	loadModel(path);
 }
 
-void Model::draw(const Shader &shader, bool noTex)
+void Model::draw(bool noTex, uint32_t materialUBOBindingPoint)
 {
-	shader.use();
+	if (!noTex)
+		glBindBufferBase(GL_UNIFORM_BUFFER, materialUBOBindingPoint, materialUBOId);
 	for (unsigned int i = 0; i < meshes.size(); i++)
-		meshes[i].draw(shader, noTex);
+		meshes[i].draw(noTex, materialUBOId);
 }
 
 void Model::loadModel(const std::string& path)
 {
 	Assimp::Importer import;
-	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
+	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_CalcTangentSpace);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
@@ -52,14 +57,18 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		{
 			vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 		}
-		if (mesh->mTextureCoords[0])
+		if (mesh->HasTextureCoords(0))
 		{
 			vertex.texCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-			vertex.tangent = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-			vertex.bitangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
 		}
 		else
 			vertex.texCoords = glm::vec2(0.0f, 0.0f);
+		if (mesh->HasTangentsAndBitangents())
+		{
+			vertex.tangent = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+			vertex.bitangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+		}
+		
 		vertices.push_back(vertex);
 	}
 
@@ -107,7 +116,10 @@ std::vector<Mesh::Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextur
 		}
 		if (!skip)
 		{
-			Mesh::Texture texture = { textureFromFile(pathStr, directory), texType, pathStr };
+			bool gamma = false;
+			if (texType == Mesh::DIFFUSE)
+				gamma = true;
+			Mesh::Texture texture = { textureFromFile(pathStr, directory, gamma), texType, pathStr };
 			textures.push_back(texture);
 			texturesLoaded.push_back(texture);
 		}
@@ -130,6 +142,7 @@ GLuint Model::textureFromFile(const std::string &path, const std::string &direct
 	if (data)
 	{
 		GLenum format;
+		GLenum intFormat;
 		switch (nrComponents)
 		{
 			case 1: 
@@ -139,17 +152,19 @@ GLuint Model::textureFromFile(const std::string &path, const std::string &direct
 				format = GL_RG;
 			break;
 			case 3:
+				intFormat = gamma ? GL_SRGB : GL_RGB;
 				format = GL_RGB;
-			break;
+				break;
 			case 4:
+				intFormat = gamma ? GL_SRGB_ALPHA : GL_RGBA;
 				format = GL_RGBA;
-			break;
+				break;
 			default:
 				format = GL_RGB;
 			break;
 		}
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, intFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		float aniso = 0.0f;
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &aniso);
