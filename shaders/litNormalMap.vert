@@ -6,18 +6,18 @@ layout (location = 2) in vec2 texCoord;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
 
-layout (std140, binding = 0) uniform ObjectUBO
+layout (std140, binding = 0) uniform CameraUBO
+{
+	mat4 cameraPV;
+};
+
+layout (std140, binding = 1) uniform ObjectUBO
 {
 	mat4 M;
 	mat4 cofactorM;
 };
 
-layout (std140, binding = 2) uniform CameraUBO
-{
-	mat4 cameraPV;
-};
-
-layout (std140, binding = 3) uniform LightUBO
+layout (std140, binding = 2) uniform LightUBO
 {
 	vec4 viewPos;
 	vec3 lightPos;
@@ -49,6 +49,6 @@ void main()
 	vs_out.tangentLightPos = TBN * lightPos;
     vs_out.tangentViewPos  = TBN * viewPos.xyz;
     vs_out.tangentPosition  = TBN * Mposition.xyz;
-	vs_out.normal = TBN*N;
+	vs_out.normal = TBN* N;
 	gl_Position = cameraPV * Mposition;
 }

@@ -6,6 +6,67 @@ Renderer::Renderer(int width, int height)
 	GLuint VAO;
 	GLuint VBO;
 	GLuint UBO;
+
+	glGenVertexArrays(1, &VAO);
+	VAOs.push_back(VAO);
+	glBindVertexArray(VAO);
+	glGenBuffers(1, &VBO);
+	VBOs.push_back(VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// positions
+	glm::vec3 pos1(-1.0, 1.0, 0.0);
+	glm::vec3 pos2(-1.0, -1.0, 0.0);
+	glm::vec3 pos3(1.0, -1.0, 0.0);
+	glm::vec3 pos4(1.0, 1.0, 0.0);
+	// texture coordinates
+	glm::vec2 uv1(0.0, 1.0);
+	glm::vec2 uv2(0.0, 0.0);
+	glm::vec2 uv3(1.0, 0.0);
+	glm::vec2 uv4(1.0, 1.0);
+	// normal vector
+	glm::vec3 nm(0.0, 0.0, 1.0);
+
+	glm::vec3 edge1 = pos2 - pos1;
+	glm::vec3 edge2 = pos3 - pos1;
+	glm::vec2 deltaUV1 = uv2 - uv1;
+	glm::vec2 deltaUV2 = uv3 - uv1;
+	float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+	glm::mat2 inverseUVs(deltaUV2.y, -deltaUV2.x, -deltaUV1.y, deltaUV1.x);
+	glm::mat3x2 edges;
+	edges = glm::row(edges, 0, edge1);
+	edges = glm::row(edges, 1, edge2);
+	glm::mat3x2 TB1 = f * inverseUVs * edges;
+	glm::vec3 tangent1 = glm::row(TB1, 0);
+	glm::vec3 bitangent1 = glm::row(TB1, 1);
+
+	edge1 = pos4 - pos1;
+	deltaUV1 = uv4 - uv1;
+	f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+	inverseUVs = glm::mat2(deltaUV2.y, -deltaUV2.x, -deltaUV1.y, deltaUV1.x);
+	edges = glm::row(edges, 0, edge1);
+	glm::mat3x2 TB2 = f * inverseUVs * edges;
+	glm::vec3 tangent2 = glm::row(TB2, 0);
+	glm::vec3 bitangent2 = glm::row(TB2, 1);
+
+	float planeVertices[] =
+	{ pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+	  pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+	  pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+	  pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+	  pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+	  pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z };
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
 	
 	//cameraUBO
 	glGenBuffers(1, &UBO);
@@ -13,22 +74,24 @@ Renderer::Renderer(int width, int height)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
+	//modelUBO
+	glGenBuffers(1, &UBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
+	UBOs.push_back(UBO);
+	
 	//lightUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 	
-	//modelUBO
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
-	UBOs.push_back(UBO);
+	programs.emplace_back("shaders/litNormalMap.vert", "null", "shaders/litParallaxMap.frag");
 
-	models.emplace_back("models/nanosuit/nanosuit.obj");
-
-	programs.emplace_back("shaders/litNormalMap.vert", "null", "shaders/litNormalMap.frag");
-	
+	load2DTexture("textures/bricks2.jpg", GL_REPEAT, true);
+	load2DTexture("textures/bricks2_normal.jpg", GL_REPEAT, false);
+	load2DTexture("textures/bricks2_disp.jpg", GL_REPEAT, false);
+		
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	rebuildFramebuffer(width, height);
 	
@@ -157,7 +220,7 @@ void Renderer::buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture)
 
 void Renderer::updateUniforms(Camera& camera)
 {
-	//UBOs - cameraUBO, lightUBO, modelUBO, materialUBO
+	//UBOs - cameraUBO, objectUBO, lightUBO
 	//Update matrices and UBOs here
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
@@ -165,36 +228,39 @@ void Renderer::updateUniforms(Camera& camera)
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(cameraUBO), &cameraUBO);
 
-		lightUBO.lightPos = glm::vec3(camera.pos);
+		lightUBO.lightPos = glm::vec3(0.5f, 1.0f, 0.3f);
 		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightUBO), &lightUBO);
 	}
 
 	modelUBO.M = glm::mat4(1.0f);
 	//modelUBO.M = glm::translate(modelUBO.M, glm::vec3(0.0f, 0.0f, -1.0f));
-	modelUBO.M = glm::rotate(modelUBO.M, static_cast<float>(glfwGetTime()) * 0.4f, glm::normalize(glm::vec3(0.0, 1.0, 0.0)));
-	modelUBO.M = glm::scale(modelUBO.M, glm::vec3(0.1f));
+	//modelUBO.M = glm::rotate(modelUBO.M, glm::radians(static_cast<float>(glfwGetTime()) * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
 	modelUBO.cofactorM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.M)));
-	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
 }
 
 void Renderer::renderScene()
 {
 	programs[0].use();
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[2]);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[0]);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 3, UBOs[1]);
-	models[0].draw(false, 1);
-
-	//modelUBO.M = glm::mat4(1.0f);
-	//modelUBO.M = glm::translate(modelUBO.M, lightUBO.lightPos);
-	//modelUBO.M = glm::scale(modelUBO.M, glm::vec3(0.01f));
-	//modelUBO.cofactorM = glm::transpose(glm::adjugate(modelUBO.M));
-	//glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
-	//glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
-	//models[0].draw(false, 1);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[0]);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[1]);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[2]);
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGui::Begin("Parallax Debug", (bool*)0, overlayBox);
+	ImGui::SliderFloat("Height Scale", &heightScale, 0.001f, 1.0f);
+	ImGui::End();
+	glUniform1f(0, heightScale);
+	glBindVertexArray(VAOs[0]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_2D, textures[2]);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void Renderer::render(Camera &camera, bool wireframe)

@@ -65,6 +65,7 @@ private:
 	MUBO modelUBO;
 	PVUBO cameraUBO;
 	LightUBO lightUBO;
+	float heightScale = 0.001f;
 
 	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);
