@@ -23,7 +23,7 @@ public:
 	~Renderer();
 
 	void render(Camera &camera, bool wireframe);
-    void rebuildFramebuffer(int width, int height);
+    void rebuildScreenFramebuffers(int width, int height);
 
 private:
 
@@ -41,7 +41,8 @@ private:
 	typedef struct LightUBO
 	{
 		glm::vec4 viewPos;
-		glm::vec3 lightPos;
+		glm::vec4 lightPos[4];
+		glm::vec4 lightCol[4];
 	} LightUBO;
 
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -49,11 +50,16 @@ private:
 	GLuint depthMapFBO = 0;
 	GLuint depthMapTexture = 0;
 	
-    GLuint FBO = 0;
-    GLuint FBOtexture = 0;
+    GLuint FBOScreenMSAA = 0;
+    GLuint TextureScreenMSAA = 0;
+	GLuint RBOScreenMSAA = 0;
+	GLuint FBOScreen = 0;
+	GLuint TextureScreen = 0;
+	GLuint RBOScreen = 0;
+	
     int width = 0;
     int height = 0;
-    GLuint RBO = 0;
+    
 
 	std::vector<GLuint> VAOs;
     std::vector<GLuint> VBOs;
@@ -65,7 +71,6 @@ private:
 	MUBO modelUBO;
 	PVUBO cameraUBO;
 	LightUBO lightUBO;
-	float heightScale = 0.001f;
 
 	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);

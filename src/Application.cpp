@@ -1,6 +1,10 @@
 #include "Application.h"
 
-#define DEBUG 0
+#ifdef NDEBUG
+	#define DEBUG 0
+#else
+	#define DEBUG 1
+#endif
 
 void Application::glfwErrorCallback(int error, const char* description)
 {
@@ -14,7 +18,7 @@ void Application::glfwFramebufferSizeCallback(GLFWwindow* window, int width, int
 	{
 		app->camera->updateP(width, height);
 		glViewport(0, 0, width, height);
-		app->renderer->rebuildFramebuffer(width, height);
+		app->renderer->rebuildScreenFramebuffers(width, height);
 		app->draw();
 	}
 }
