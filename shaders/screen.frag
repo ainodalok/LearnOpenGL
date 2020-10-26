@@ -1,7 +1,7 @@
 #version 460 core
 layout (binding = 0) uniform sampler2D screenTexture;
 
-layout (location = 0) in vec2 uv;
+layout (location = 0) in vec2 texCoord;
 
 layout (location = 0) out vec4 fragColor;
 
@@ -47,5 +47,5 @@ void main()
     //
     //fragColor = vec4(col, 1.0);
 
-    fragColor = vec4(vec3(texture(screenTexture, uv)), 1.0);
+    fragColor = vec4(vec3(texture(screenTexture, texCoord)), 1.0);
 }

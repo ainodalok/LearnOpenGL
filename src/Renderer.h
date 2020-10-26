@@ -51,15 +51,18 @@ private:
 	GLuint depthMapTexture = 0;
 	
     GLuint FBOScreenMSAA = 0;
-    GLuint TextureScreenMSAA = 0;
+    GLuint textureScreenMSAA[2] = { 0, 0 }; //0 - General resolution, 1 - Only bright areas
 	GLuint RBOScreenMSAA = 0;
 	GLuint FBOScreen = 0;
-	GLuint TextureScreen = 0;
+	GLuint textureScreen[2] = { 0, 0 }; //0 - General resolution, 1 - Only bright areas
 	GLuint RBOScreen = 0;
+	GLuint FBOBloom = 0;
+	GLuint textureBloom[2] = { 0, 0 };
 	
     int width = 0;
     int height = 0;
-    
+
+	bool bloom = true;
 
 	std::vector<GLuint> VAOs;
     std::vector<GLuint> VBOs;
@@ -69,6 +72,7 @@ private:
 	std::vector<Model> models;
 
 	MUBO modelUBO;
+	MUBO lampUBO;
 	PVUBO cameraUBO;
 	LightUBO lightUBO;
 
