@@ -179,9 +179,9 @@ Renderer::Renderer(int width, int height)
 	lightUBO.lightPos[2] = glm::vec4(0.0f, -1.8f, 4.0f, 0.0f);
 	lightUBO.lightPos[3] = glm::vec4(0.8f, -1.7f, 6.0f, 0.0f);
 	lightUBO.lightCol[0] = glm::vec4(200.0f, 200.0f, 200.0f, 0.0f);
-	lightUBO.lightCol[1] = glm::vec4(35.0f, 0.0f, 0.0f, 0.0f);
-	lightUBO.lightCol[2] = glm::vec4(0.0f, 0.0f, 55.0f, 0.0f);
-	lightUBO.lightCol[3] = glm::vec4(0.0f, 65.0f, 0.0f, 0.0f);
+	lightUBO.lightCol[1] = glm::vec4(10.0f, 0.0f, 0.0f, 0.0f);
+	lightUBO.lightCol[2] = glm::vec4(0.0f, 0.0f, 15.0f, 0.0f);
+	lightUBO.lightCol[3] = glm::vec4(0.0f, 5.0f, 0.0f, 0.0f);
 	
 	modelUBO.M = glm::mat4(1.0f);
 	modelUBO.M = glm::translate(modelUBO.M, glm::vec3(0.0f, 0.0f, 25.0f));
