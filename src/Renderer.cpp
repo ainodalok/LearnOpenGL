@@ -388,11 +388,6 @@ void Renderer::render(Camera &camera, bool wireframe)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	renderScene();
 
-	ImGui::SetNextWindowBgAlpha(0.35f);
-	ImGui::Begin("Bloom Debug", (bool*)0, overlayBox);
-	ImGui::Checkbox("Enable Bloom", &bloom);
-	ImGui::End();
-	
 	//Resolve MSAA
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBOScreenMSAA);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBOScreen);
@@ -426,6 +421,13 @@ void Renderer::render(Camera &camera, bool wireframe)
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 		}
 	}
+
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGui::Begin("Bloom Debug", (bool*)0, overlayBox);
+	ImGui::Checkbox("Enable Bloom", &bloom);
+	if (bloom)
+		ImGui::Image(reinterpret_cast<void*>(textureBloom[(amount + 1) % 2]), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+	ImGui::End();
 	
 	//Render to screen
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
