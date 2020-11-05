@@ -50,9 +50,6 @@ private:
 	GLuint depthMapFBO = 0;
 	GLuint depthMapTexture = 0;
 	
-    GLuint FBOScreenMSAA = 0;
-    GLuint textureScreenMSAA[2] = { 0, 0 }; //0 - General resolution, 1 - Only bright areas
-	GLuint RBOScreenMSAA = 0;
 	GLuint FBOScreen = 0;
 	GLuint textureScreen[2] = { 0, 0 }; //0 - General resolution, 1 - Only bright areas
 	GLuint RBOScreen = 0;
