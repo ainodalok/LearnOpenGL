@@ -55,6 +55,8 @@ private:
 	GLuint RBOScreen = 0;
 	GLuint FBOBloom = 0;
 	GLuint textureBloom[2] = { 0, 0 };
+	int bloomDownscaleFactor = 3;
+	int bloomAmount = 4;
 	
     int width = 0;
     int height = 0;

@@ -121,7 +121,8 @@ void Application::glMessageCallback(GLenum source, GLenum type, GLuint id, GLenu
 	}();
 
 	std::cout << src_str << ", " << type_str << ", " << severity_str << ", " << id << ": " << message << std::endl;
-	std::cin.get();
+	if (strcmp(severity_str, "NOTIFICATION") != 0)
+		std::cin.get();
 }
 
 Application::Application()

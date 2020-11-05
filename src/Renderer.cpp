@@ -387,13 +387,13 @@ void Renderer::render(Camera &camera, bool wireframe)
 
 	glDisable(GL_DEPTH_TEST);
 	
-	const int amount = 10;
 	if (bloom)
 	{
 		//Apply blur
 		programs[1].use();
 		glBindFramebuffer(GL_FRAMEBUFFER, FBOBloom);
-		for (int i = 0; i < amount; i++)
+		glViewport(0, 0, this->width / bloomDownscaleFactor, this->height / bloomDownscaleFactor);
+		for (int i = 0; i < bloomAmount; i++)
 		{
 			glDrawBuffer(GL_COLOR_ATTACHMENT0 + (i % 2));
 			if (i == 0)
@@ -410,17 +410,18 @@ void Renderer::render(Camera &camera, bool wireframe)
 	ImGui::Begin("Bloom Debug", (bool*)0, overlayBox);
 	ImGui::Checkbox("Enable Bloom", &bloom);
 	if (bloom)
-		ImGui::Image(reinterpret_cast<void*>(textureBloom[(amount + 1) % 2]), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(reinterpret_cast<void*>(textureBloom[(bloomAmount + 1) % 2]), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
 	ImGui::End();
 	
 	//Render to screen
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, this->width, this->height);
 	programs[0].use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureScreen[0]);
 	//Use last texture on which blur was applied
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, textureBloom[(amount + 1) % 2]);
+	glBindTexture(GL_TEXTURE_2D, textureBloom[(bloomAmount + 1) % 2]);
 	glUniform1i(0, bloom);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	
@@ -478,7 +479,7 @@ void Renderer::rebuildScreenFramebuffers(int width, int height)
 	for (int i = 0; i < 2; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, textureBloom[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, this->width / bloomDownscaleFactor, this->height / bloomDownscaleFactor, 0, GL_RGBA, GL_FLOAT, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
