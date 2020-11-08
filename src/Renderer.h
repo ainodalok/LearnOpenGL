@@ -13,8 +13,8 @@
 #include <glm/gtc/random.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <vector>
-#include <array>
-#include <map>
+#include <random>
+#include <chrono>
 
 class Renderer
 {
@@ -41,15 +41,18 @@ private:
 	typedef struct LightUBO
 	{
 		glm::vec4 viewPos;
-		glm::vec4 lightPos[4];
-		glm::vec4 lightCol[4];
+		glm::vec4 lightPos[32];
+		glm::vec4 lightCol[32];
 	} LightUBO;
 
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
 	GLuint depthMapFBO = 0;
 	GLuint depthMapTexture = 0;
-	
+
+	GLuint GBuffer = 0;
+	GLuint textureGBuffer[3] = { 0, 0, 0 }; // position, normal, albedo + specular
+	GLuint RBOGBuffer = 0;
 	GLuint FBOScreen = 0;
 	GLuint textureScreen[2] = { 0, 0 }; //0 - General resolution, 1 - Only bright areas
 	GLuint RBOScreen = 0;
@@ -75,10 +78,16 @@ private:
 	PVUBO cameraUBO;
 	LightUBO lightUBO;
 
+	glm::vec4 lightPosStart[32];
+	glm::vec4 lightColStart[32];
+
+	std::mt19937_64 rng;
+
 	void load2DTexture(const std::string &texturePath, GLint wrapMode, bool srgb);
     void loadCubeMap(const std::vector<std::string> &texturePath);
 	void buildDepthMapFramebuffer(GLuint &FBO, GLuint &texture);
 	void renderScene();
+	void renderForward();
 	void updateUniforms(Camera& camera);
 };
 

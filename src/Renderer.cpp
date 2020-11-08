@@ -1,6 +1,6 @@
 #include "Renderer.h"
 
-Renderer::Renderer(int width, int height)
+Renderer::Renderer(int width, int height) : rng(std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
 	//Static data construction and transfer
 	GLuint VAO;
@@ -100,11 +100,11 @@ Renderer::Renderer(int width, int height)
 		 1.0f,  1.0f , 1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
 		 1.0f,  1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-right  
 		 1.0f,  1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,  // top-left 
-		-1.0f,  1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f // bottom-left 
+		-1.0f,  1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-left 
+		-1.0f,  1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f  // bottom-left 
 
 	};
-	
+
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices) + sizeof(lampVertices), nullptr, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertices), cubeVertices);
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(cubeVertices), sizeof(lampVertices), lampVertices);
@@ -122,8 +122,6 @@ Renderer::Renderer(int width, int height)
 	VBOs.push_back(VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	
-	
 	glBufferData(GL_ARRAY_BUFFER, sizeof(lampVertices), &lampVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -131,7 +129,7 @@ Renderer::Renderer(int width, int height)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	
+
 	//cameraUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
@@ -143,45 +141,31 @@ Renderer::Renderer(int width, int height)
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
-	
+
 	//lightUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
-	//lampUBO W
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
-	UBOs.push_back(UBO);
+	//lamps UBO
+	for (int i = 0; i < 32; i++)
+	{
+		glGenBuffers(1, &UBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
+		UBOs.push_back(UBO);
+	}
 	
-	//lampUBO R
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
-	UBOs.push_back(UBO);
-
-	//lampUBO G
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
-	UBOs.push_back(UBO);
-
-	//lampUBO G
-	glGenBuffers(1, &UBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
-	UBOs.push_back(UBO);
-
-	lightUBO.lightPos[0] = glm::vec4(0.0f, 0.0f, 49.5f, 0.0f);
-	lightUBO.lightPos[1] = glm::vec4(-1.4f, -1.9f, 9.0f, 0.0f);
-	lightUBO.lightPos[2] = glm::vec4(0.0f, -1.8f, 4.0f, 0.0f);
-	lightUBO.lightPos[3] = glm::vec4(0.8f, -1.7f, 6.0f, 0.0f);
-	lightUBO.lightCol[0] = glm::vec4(200.0f, 200.0f, 200.0f, 0.0f);
-	lightUBO.lightCol[1] = glm::vec4(10.0f, 0.0f, 0.0f, 0.0f);
-	lightUBO.lightCol[2] = glm::vec4(0.0f, 0.0f, 15.0f, 0.0f);
-	lightUBO.lightCol[3] = glm::vec4(0.0f, 5.0f, 0.0f, 0.0f);
+	std::uniform_real_distribution<float> x(-2.2f, 2.2f);
+	std::uniform_real_distribution<float> y(-2.2f, 2.2f);
+	std::uniform_real_distribution<float> z(0.3f, 49.7f);
+	std::uniform_real_distribution<float> col(0.0f, 10.0f);
+	for (int i = 0; i < 32; i++)
+	{
+		lightPosStart[i] = glm::vec4(x(rng), y(rng), z(rng), 0.0f);
+		lightColStart[i] = glm::vec4(col(rng), col(rng), col(rng), 0.0f);
+	}
 	
 	modelUBO.M = glm::mat4(1.0f);
 	modelUBO.M = glm::translate(modelUBO.M, glm::vec3(0.0f, 0.0f, 25.0f));
@@ -190,19 +174,10 @@ Renderer::Renderer(int width, int height)
 	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
 
-	for (int i = 0; i < 4; i++)
-	{
-		modelUBO.M = glm::mat4(1.0f);
-		modelUBO.M = glm::translate(modelUBO.M, glm::vec3(lightUBO.lightPos[i]));
-		modelUBO.M = glm::scale(modelUBO.M, glm::vec3(0.25f, 0.25, 0.25));
-		modelUBO.cofactorM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.M)));
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[3 + i]);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
-	}
-
 	programs.emplace_back("shaders/screen.vert", "null", "shaders/hdr.frag");
 	programs.emplace_back("shaders/screen.vert", "null", "shaders/screenBlur.frag");
-	programs.emplace_back("shaders/litHDRObj.vert", "null", "shaders/litHDRObj.frag");
+	programs.emplace_back("shaders/litHDRObj.vert", "null", "shaders/GBuffer.frag");
+	programs.emplace_back("shaders/screen.vert", "null", "shaders/deferredLight.frag");
 	programs.emplace_back("shaders/litHDRObj.vert", "null", "shaders/bloomObj.frag");
 
 	load2DTexture("textures/wood.png", GL_REPEAT, true);
@@ -221,11 +196,16 @@ Renderer::~Renderer()
 		glDeleteVertexArrays(1, &VAOs[i]);
 	for (int i = 0; i < VBOs.size(); i++)
 		glDeleteBuffers(1, &VBOs[i]);
-	for (int i = 0; i < textures.size(); i++)
-		glDeleteTextures(1, &textures[i]);
+	glDeleteTextures(textures.size(), textures.data());
+	
+	glDeleteRenderbuffers(1, &RBOGBuffer);
+	glDeleteTextures(3, textureGBuffer);
+	glDeleteFramebuffers(1, &GBuffer);
+	
 	glDeleteRenderbuffers(1, &RBOScreen);
 	glDeleteTextures(2, textureScreen);
 	glDeleteFramebuffers(1, &FBOScreen);
+	
 	glDeleteTextures(2, textureBloom);
 	glDeleteFramebuffers(1, &FBOBloom);
 }
@@ -344,10 +324,32 @@ void Renderer::updateUniforms(Camera& camera)
 		cameraUBO.PV = camera.getP() * camera.getV();
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(cameraUBO), &cameraUBO);
+	}
+	
+	for (int i = 0; i < 32; i++)
+	{
+		//std::chrono::high_resolution_clock::duration time = std::chrono::high_resolution_clock::now().time_since_epoch();
+		std::chrono::duration<float, std::milli> durationSinceStart = std::chrono::high_resolution_clock::now().time_since_epoch();
+		float time = durationSinceStart.count() / 1000.0f;
+		lightUBO.lightPos[i].x = glm::sin(time + 2.0f * glm::pi<float>() * lightPosStart[i].x / 4.4f) * 2.2f;
+		lightUBO.lightPos[i].y = glm::sin(time + 2.0f * glm::pi<float>() * lightPosStart[i].y / 4.4f) * 2.2f;
+		lightUBO.lightPos[i].z = glm::sin(time + 2.0f * glm::pi<float>() * lightPosStart[i].z / 49.4f) * 24.85f + 25.15f;
+		lightUBO.lightCol[i].x = glm::sin(time + 2.0f * glm::pi<float>() * lightColStart[i].x / 10.0f) * 5.0f + 5.0f;
+		lightUBO.lightCol[i].y = glm::sin(time + 2.0f * glm::pi<float>() * lightColStart[i].y / 10.0f) * 5.0f + 5.0f;
+		lightUBO.lightCol[i].z = glm::sin(time + 2.0f * glm::pi<float>() * lightColStart[i].z / 10.0f) * 5.0f + 5.0f;
+	}
+	lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightUBO), &lightUBO);
 
-		lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
-		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightUBO), &lightUBO);
+	for (int i = 0; i < 32; i++)
+	{
+		modelUBO.M = glm::mat4(1.0f);
+		modelUBO.M = glm::translate(modelUBO.M, glm::vec3(lightUBO.lightPos[i]));
+		modelUBO.M = glm::scale(modelUBO.M, glm::vec3(0.25f, 0.25, 0.25));
+		modelUBO.cofactorM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.M)));
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[3 + i]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
 	}
 }
 
@@ -356,16 +358,18 @@ void Renderer::renderScene()
 	programs[2].use();
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[0]);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[1]);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[2]);
 	glBindVertexArray(VAOs[0]);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
+}
 
-	programs[3].use();
+void Renderer::renderForward()
+{
+	programs[4].use();
 	glBindVertexArray(VAOs[0]);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOs[0]);
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 32; i++)
 	{
 		glBindBufferBase(GL_UNIFORM_BUFFER, 1, UBOs[3 + i]);
 		glUniform3fv(0, 1, glm::value_ptr(glm::vec3(lightUBO.lightCol[i])));
@@ -373,26 +377,46 @@ void Renderer::renderScene()
 	}
 }
 
-void Renderer::render(Camera &camera, bool wireframe)
+void Renderer::render(Camera& camera, bool wireframe)
 {
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	updateUniforms(camera);
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, FBOScreen);
+
+	//Create GBuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, GBuffer);
 	glViewport(0, 0, this->width, this->height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	renderScene();
 
+	//Render Lighting
+	glBindFramebuffer(GL_FRAMEBUFFER, FBOScreen);
+	for (int i = 0; i < 3; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, textureGBuffer[i]);
+	}
+	//Light UBO
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, UBOs[2]);
+	programs[3].use();
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBOScreen);
+	glBlitFramebuffer(0, 0, this->width, this->height, 0, 0, this->width, this->height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+	renderForward();
+
+	//Blur the bloom image
 	glDisable(GL_DEPTH_TEST);
-	
 	if (bloom)
 	{
+		glViewport(0, 0, this->width / bloomDownscaleFactor, this->height / bloomDownscaleFactor);
 		//Apply blur
 		programs[1].use();
 		glBindFramebuffer(GL_FRAMEBUFFER, FBOBloom);
-		glViewport(0, 0, this->width / bloomDownscaleFactor, this->height / bloomDownscaleFactor);
+		glActiveTexture(GL_TEXTURE0);
 		for (int i = 0; i < bloomAmount; i++)
 		{
 			glDrawBuffer(GL_COLOR_ATTACHMENT0 + (i % 2));
@@ -442,6 +466,33 @@ void Renderer::rebuildScreenFramebuffers(int width, int height)
 	this->width = width;
 	this->height = height;
 
+	if (GBuffer != 0)
+	{
+		glDeleteTextures(3, textureGBuffer);
+		glDeleteRenderbuffers(1, &RBOGBuffer);
+	}
+	else
+		glGenFramebuffers(1, &GBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, GBuffer);
+	glGenTextures(3, textureGBuffer);
+	for (int i = 0; i < 3; i++)
+	{
+		glBindTexture(GL_TEXTURE_2D, textureGBuffer[i]);
+		//8-bit float per component for albedo+specular texture
+		glTexImage2D(GL_TEXTURE_2D, 0, i != 2 ? GL_RGBA16F : GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textureGBuffer[i], 0);
+	}
+	glGenRenderbuffers(1, &RBOGBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBOGBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBOGBuffer);
+	GLuint attachmentsGBuffer[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachmentsGBuffer);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cerr << "ERROR::FRAMEBUFFER:: GBuffer is not complete!" << std::endl;
+	
 	if (FBOScreen != 0)
 	{
 		glDeleteTextures(2, textureScreen);
