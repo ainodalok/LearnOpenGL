@@ -6,13 +6,13 @@ layout (location = 2) in vec2 texCoord;
 
 layout (std140, binding = 0) uniform CameraUBO
 {
-	mat4 cameraPV;
+	mat4 cameraP;
 };
 
 layout (std140, binding = 1) uniform ObjectUBO
 {
-	mat4 M;
-	mat4 cofactorM;
+	mat4 VM;
+	mat4 cofactorVM;
 };
 
 out VS_OUT
@@ -24,9 +24,9 @@ out VS_OUT
 
 void main()
 {
-	vs_out.position = vec3(M * vec4(position, 1.0));
-	vs_out.normal = mat3(cofactorM) * normal;
+	vs_out.position = vec3(VM * vec4(position, 1.0));
+	vs_out.normal = mat3(cofactorVM) * normal;
 	vs_out.texCoord = texCoord;
 
-	gl_Position = cameraPV * M * vec4(position, 1.0);
+	gl_Position = cameraP * VM * vec4(position, 1.0);
 }

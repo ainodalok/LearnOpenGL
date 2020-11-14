@@ -133,13 +133,13 @@ Renderer::Renderer(int width, int height) : rng(std::chrono::high_resolution_clo
 	//cameraUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(PVUBO), nullptr, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(PUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
 	//modelUBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(MVUBO), nullptr, GL_STATIC_DRAW);
 	UBOs.push_back(UBO);
 
 	//lightUBO
@@ -153,7 +153,7 @@ Renderer::Renderer(int width, int height) : rng(std::chrono::high_resolution_clo
 	{
 		glGenBuffers(1, &UBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(MUBO), nullptr, GL_STATIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(MVUBO), nullptr, GL_STATIC_DRAW);
 		UBOs.push_back(UBO);
 	}
 	
@@ -166,13 +166,6 @@ Renderer::Renderer(int width, int height) : rng(std::chrono::high_resolution_clo
 		lightPosStart[i] = glm::vec4(x(rng), y(rng), z(rng), 0.0f);
 		lightColStart[i] = glm::vec4(col(rng), col(rng), col(rng), 0.0f);
 	}
-	
-	modelUBO.M = glm::mat4(1.0f);
-	modelUBO.M = glm::translate(modelUBO.M, glm::vec3(0.0f, 0.0f, 25.0f));
-	modelUBO.M = glm::scale(modelUBO.M, glm::vec3(2.5f, 2.5f, 27.5f));
-	modelUBO.cofactorM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.M)));
-	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
 
 	programs.emplace_back("shaders/screen.vert", "null", "shaders/hdr.frag");
 	programs.emplace_back("shaders/screen.vert", "null", "shaders/screenBlur.frag");
@@ -321,14 +314,23 @@ void Renderer::updateUniforms(Camera& camera)
 	//Update matrices and UBOs here
 	if (camera.wasUpdatedP || camera.wasUpdatedV)
 	{
-		cameraUBO.PV = camera.getP() * camera.getV();
+		cameraUBO.P = camera.getP();
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[0]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(cameraUBO), &cameraUBO);
 	}
-	
+
+	if (camera.wasUpdatedV)
+	{
+		modelUBO.VM = camera.getV();
+		modelUBO.VM = glm::translate(modelUBO.VM, glm::vec3(0.0f, 0.0f, 25.0f));
+		modelUBO.VM = glm::scale(modelUBO.VM, glm::vec3(2.5f, 2.5f, 27.5f));
+		modelUBO.cofactorVM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.VM)));
+		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[1]);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
+	}
+
 	for (int i = 0; i < 32; i++)
 	{
-		//std::chrono::high_resolution_clock::duration time = std::chrono::high_resolution_clock::now().time_since_epoch();
 		std::chrono::duration<float, std::milli> durationSinceStart = std::chrono::high_resolution_clock::now().time_since_epoch();
 		float time = durationSinceStart.count() / 1000.0f;
 		lightUBO.lightPos[i].x = glm::sin(time + 2.0f * glm::pi<float>() * lightPosStart[i].x / 4.4f) * 2.2f;
@@ -337,20 +339,16 @@ void Renderer::updateUniforms(Camera& camera)
 		lightUBO.lightCol[i].x = glm::sin(time + 2.0f * glm::pi<float>() * lightColStart[i].x / 10.0f) * 5.0f + 5.0f;
 		lightUBO.lightCol[i].y = glm::sin(time + 2.0f * glm::pi<float>() * lightColStart[i].y / 10.0f) * 5.0f + 5.0f;
 		lightUBO.lightCol[i].z = glm::sin(time + 2.0f * glm::pi<float>() * lightColStart[i].z / 10.0f) * 5.0f + 5.0f;
-	}
-	lightUBO.viewPos = glm::vec4(camera.pos, 1.0f);
-	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightUBO), &lightUBO);
-
-	for (int i = 0; i < 32; i++)
-	{
-		modelUBO.M = glm::mat4(1.0f);
-		modelUBO.M = glm::translate(modelUBO.M, glm::vec3(lightUBO.lightPos[i]));
-		modelUBO.M = glm::scale(modelUBO.M, glm::vec3(0.25f, 0.25, 0.25));
-		modelUBO.cofactorM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.M)));
+		modelUBO.VM = camera.getV();
+		modelUBO.VM = glm::translate(modelUBO.VM, glm::vec3(lightUBO.lightPos[i]));
+		modelUBO.VM = glm::scale(modelUBO.VM, glm::vec3(0.25f, 0.25f, 0.25f));
+		modelUBO.cofactorVM = glm::transpose(glm::adjugate(glm::mat3(modelUBO.VM)));
 		glBindBuffer(GL_UNIFORM_BUFFER, UBOs[3 + i]);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(modelUBO), &modelUBO);
+		lightUBO.lightPos[i] = camera.getV() * lightUBO.lightPos[i];
 	}
+	glBindBuffer(GL_UNIFORM_BUFFER, UBOs[2]);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(lightUBO), &lightUBO);
 }
 
 void Renderer::renderScene()

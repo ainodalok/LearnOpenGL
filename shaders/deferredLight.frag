@@ -4,7 +4,6 @@ layout (location = 0) in vec2 texCoord;
 
 layout (std140, binding = 2) uniform LightUBO
 {
-	vec4 viewPos;
 	vec4 lightPos[32];
 	vec4 lightCol[32];
 };

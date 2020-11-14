@@ -17,7 +17,7 @@ layout (location = 2) out vec4 gAlbedoSpec;
 void main()
 {
 	gPosition = fs_in.position;
-	gNormal = fs_in.normal;
+	gNormal = normalize(fs_in.normal);
 	gAlbedoSpec.rgb = texture(diffuse, fs_in.texCoord).rgb;
 	//Specular in alpha
 	gAlbedoSpec.a = texture(specular, fs_in.texCoord).r;

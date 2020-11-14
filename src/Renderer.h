@@ -27,20 +27,19 @@ public:
 
 private:
 
-	typedef struct MUBO
+	typedef struct MVUBO
 	{
-		glm::mat4 M;
-		glm::mat4 cofactorM;
-	} MUBO;
+		glm::mat4 VM;
+		glm::mat4 cofactorVM;
+	} MVUBO;
 
-	typedef struct PVUBO
+	typedef struct PUBO
 	{
-		glm::mat4 PV;
-	} PV;
+		glm::mat4 P;
+	} PUBO;
 
 	typedef struct LightUBO
 	{
-		glm::vec4 viewPos;
 		glm::vec4 lightPos[32];
 		glm::vec4 lightCol[32];
 	} LightUBO;
@@ -73,9 +72,9 @@ private:
     std::vector<GLuint> UBOs;
 	std::vector<Model> models;
 
-	MUBO modelUBO;
-	MUBO lampUBO;
-	PVUBO cameraUBO;
+	MVUBO modelUBO;
+	MVUBO lampUBO;
+	PUBO cameraUBO;
 	LightUBO lightUBO;
 
 	glm::vec4 lightPosStart[32];
